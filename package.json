@@ -1,6 +1,6 @@
 {
     "name": "rarbg-enhancer",
-    "version": "6.2.2",
+    "version": "6.2.3",
     "description": "Tampermonkey userscript for RARBG mirrors — seeder-based row highlighting, filtering, and a floating settings modal.",
     "private": true,
     "license": "MIT",

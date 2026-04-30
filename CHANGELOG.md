@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.3] — 2026-04-30
+
+### Fixed
+- **Floating ⚙ button click was a no-op on first page load.** Verified live
+  on `rargb.to/tv/` via Playwright: bootstrap completed and the FAB rendered
+  with all panel children present, but the click listener bound directly to
+  the FAB element never fired. Switched the panel to a single delegated
+  click handler at the shadow-root level, with `data-action` attributes
+  driving each interactive element. Fix is also more resilient to future
+  DOM rebuilds. (issue surfaced during this PR's playwright testing)
+- **`background` shorthand on highlighted rows clobbered inherited row
+  striping** (#6). Switched the highlight CSS rule to `background-color`
+  so RARBG's own row-stripe images stay visible.
+- **Stale `data-rb-hl` / `data-rb-below` attributes could leak across
+  passes** (#7). Highlight pass is now idempotent: it wipes both
+  attributes off every `tr.lista2` first, then re-tags. Eliminates leaks
+  on threshold change, SPA navigation, and transitional NaN seeder reads.
+
+### Changed
+- **Settings modal redesigned end-to-end.** New card-style panel with:
+  - Larger 52px gradient FAB with hover/active microinteractions
+  - Real header with version badge + 30px circular × close button
+  - Live counter pills at the top: rows / highlighted / hidden
+  - Custom toggle switches replacing native checkboxes
+  - Sectioned scroll body + sticky footer with primary/secondary buttons
+  - `Esc` and `Ctrl`+`/` keyboard hints in a styled footer
+  - Honors `prefers-reduced-motion`
+- **`Ctrl+/` now toggles the new modal** instead of opening the legacy
+  `GM_config` panel. The legacy panel is still reachable via the modal's
+  "Full settings…" button, the green ⚙ Script Settings navbar tab, or the
+  Tampermonkey menu command.
+- Exposes `unsafeWindow.__rbhlPanel = { open, close, toggle, isOpen,
+  refreshCounter }` so external code (and the Mousetrap binding) can drive
+  the modal.
+
+### Added
+- Two image-host replacement rules ported from upstream
+  [FarisHijazi/Rarbg-Enhancer-UserScript](https://github.com/FarisHijazi/Rarbg-Enhancer-UserScript)
+  (commits `1dffea4`, `7504c39`, `841c35d`): `.com/i-1/` → `.com/1/`
+  and `/1s/` → `/1/`. (#36)
+- `test/artifacts/` directory under the repo for Playwright-driven test
+  screenshots. Excluded from lint via existing globs; first artifacts
+  committed as before/after evidence for this PR.
+
 ## [6.2.2] — 2026-04-30
 
 ### Fixed
@@ -97,7 +141,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Last release of the upstream "RARBG Enhancer Fork 6.0.1 (WORKS)" before this
 repository began. See the userscript header for prior history.
 
-[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.2...HEAD
+[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.3...HEAD
+[6.2.3]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.2...v6.2.3
 [6.2.2]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.1...v6.2.2
 [6.2.1]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.0...v6.2.1
 [6.2.0]: https://github.com/tyhallcsu/rarbg-enhancer/releases/tag/v6.2.0
