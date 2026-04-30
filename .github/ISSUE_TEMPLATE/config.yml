@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or discussion
+    url: https://github.com/tyhallcsu/rarbg-enhancer/discussions
+    about: Discussions are disabled — please open a feature_request or bug_report issue instead.

@@ -1,0 +1,123 @@
+name: Bug report
+description: Something isn't working — column not detected, modal won't open, rows not highlighted, etc.
+title: "[bug] "
+labels: ["type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report. The more concrete details below, the faster a fix.
+
+  - type: input
+    id: mirror
+    attributes:
+      label: Mirror domain
+      description: Full hostname (e.g. `rarbgmirror.org`, `www.rarbg.is`).
+      placeholder: rarbgmirror.org
+    validations:
+      required: true
+
+  - type: input
+    id: page-url
+    attributes:
+      label: Page URL (path is fine, redact if you'd rather)
+      description: A URL like `/torrents.php?category=42` is enough — we mainly need to know which page type.
+      placeholder: /torrents.php?category=42
+    validations:
+      required: false
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Chrome
+        - Edge
+        - Firefox
+        - Safari
+        - Opera
+        - Brave
+        - Other (specify in steps)
+    validations:
+      required: true
+
+  - type: input
+    id: browser-version
+    attributes:
+      label: Browser version
+      placeholder: e.g. Chrome 142.0.7339.81
+    validations:
+      required: true
+
+  - type: dropdown
+    id: manager
+    attributes:
+      label: Userscript manager
+      options:
+        - Tampermonkey
+        - Violentmonkey
+        - Greasemonkey
+        - Other (specify in steps)
+    validations:
+      required: true
+
+  - type: input
+    id: manager-version
+    attributes:
+      label: Userscript manager version
+      placeholder: e.g. Tampermonkey 5.6.2
+    validations:
+      required: true
+
+  - type: input
+    id: script-version
+    attributes:
+      label: rarbg-enhancer @version
+      description: Visible in the userscript header (`@version 6.2.0`).
+      placeholder: "6.2.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors
+      description: Open DevTools (`F12`) → Console. Paste any red errors related to `RBHighlighter`, `RBSettingsPanel`, or `Rarbg-Enhancer-UserScript`. Strip anything sensitive.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: As specific as possible.
+      placeholder: |
+        1. Go to https://rarbgmirror.org/torrents.php?category=42
+        2. Click the ⚙ button bottom-right
+        3. Set threshold to 50
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screenshots, screen recording, suspected cause, fix idea — all welcome.
+    validations:
+      required: false
