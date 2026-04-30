@@ -4,7 +4,7 @@
     "description": "Tampermonkey userscript for RARBG mirrors — seeder-based row highlighting, filtering, and a floating settings modal.",
     "private": true,
     "license": "MIT",
-    "author": "Tyler Hall <tyler@essremodel.com>",
+    "author": "sharmanhall",
     "homepage": "https://github.com/tyhallcsu/rarbg-enhancer",
     "repository": {
         "type": "git",

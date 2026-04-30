@@ -185,4 +185,4 @@ npm run ci             # what GitHub Actions runs
 
 ## License
 
-[MIT](LICENSE) © 2026 Tyler Hall, with attribution to prior authors above. This script is for educational purposes — it does not promote piracy, it's a UI-improvement tool for an existing website.
+[MIT](LICENSE) © 2026 sharmanhall, with attribution to prior authors above. This script is for educational purposes — it does not promote piracy, it's a UI-improvement tool for an existing website.
