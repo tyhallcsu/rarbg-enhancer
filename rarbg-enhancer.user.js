@@ -2,9 +2,9 @@
 var meta = {
     rawmdb: function () {
 // ==UserScript==
-// @name         RARBG Enhancer + Highlighter (Merged) 6.2.1
+// @name         RARBG Enhancer + Highlighter (Merged) 6.2.2
 // @namespace    https://github.com/tyhallcsu/rarbg-enhancer
-// @version      6.2.1
+// @version      6.2.2
 // @description  Fork of RARBG Enhancer 6 merged with the v5 Dynamic Column Highlighting script. Auto-solve CAPTCHA, infinite scroll, magnet shortcuts, thumbnails, image search links, plus seeder-based row highlighting, hide-below-threshold, and a floating modal settings panel.
 // @author       tyhallcsu
 // @contributor  Faris Hijazi (original author)
@@ -277,10 +277,129 @@ const debug = false; // debugmode (setting this to false will disable the consol
         '<div><div><a href="https://github.com/FarisHijazi/Rarbg-Enhancer-UserScript">Rarbg-Enhancer-UserScript Settings</a><pre style=" font-size: medium; ">You can get to this options page by pressing "ctrl+/" or by navigating to the menu as shown bellow</pre></div><img src="https://github.com/FarisHijazi/Rarbg-Enhancer-UserScript/raw/master/screenshots/rarbg-options.png"></div>'
     );
 
+    // Restyles the legacy GM_config panel — the bare-HTML look from upstream
+    // was logged as #34. This stylesheet lands inside GM_config's frame via
+    // its `css` option and targets the actual generated DOM (config_header,
+    // section_header, section_desc, config_var, field_label, saveclose_buttons,
+    // reset_holder.reset, etc.). Honors prefers-color-scheme. NOTE: keep
+    // selectors prefixed with `#GM_config` so we never leak into the page.
+    const GM_CONFIG_CSS = [
+        "/* ===== rarbg-enhancer: GM_config panel restyle (closes #34) ===== */",
+        "#GM_config {",
+        "  background: #ffffff !important; color: #1a1a1a;",
+        "  font: 13px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;",
+        "  padding: 16px 20px 12px; box-sizing: border-box;",
+        "}",
+        "#GM_config * { box-sizing: border-box; }",
+        "#GM_config .config_header {",
+        "  font-size: 18px !important; font-weight: 600; color: #2e7d32;",
+        "  text-align: center; margin: 0 0 12px; padding: 8px 0 12px;",
+        "  border-bottom: 1px solid #e0e0e0;",
+        "}",
+        "#GM_config .config_header a { color: #2e7d32; text-decoration: none; font-weight: 600; }",
+        "#GM_config .config_header a:hover { text-decoration: underline; }",
+        "#GM_config .config_header img { max-width: 100%; border-radius: 6px; margin-top: 8px; }",
+        "#GM_config .config_header pre {",
+        "  background: #f5f5f5; padding: 8px 10px; border-radius: 4px;",
+        "  font: 12px/1.4 ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace !important;",
+        "  text-align: left; color: #444; white-space: pre-wrap;",
+        "}",
+        "#GM_config .section_header_holder { margin: 16px 0 0; }",
+        "#GM_config .section_header {",
+        "  background: #2e7d32 !important; color: #ffffff !important;",
+        "  font-size: 14px !important; font-weight: 600; padding: 8px 12px !important;",
+        "  margin: 0 !important; border-radius: 6px 6px 0 0; text-align: left !important;",
+        "  border: 0 !important;",
+        "}",
+        "#GM_config .section_desc {",
+        "  background: #f5f5f5 !important; color: #555 !important;",
+        "  font-size: 12px !important; padding: 8px 12px !important; margin: 0 0 8px !important;",
+        "  border-radius: 0 0 6px 6px; border-left: 3px solid #2e7d32; text-align: left !important;",
+        "}",
+        "#GM_config .config_var {",
+        "  display: flex !important; align-items: center; gap: 12px;",
+        "  padding: 8px 4px !important; margin: 0 !important;",
+        "  border-bottom: 1px solid #eee;",
+        "}",
+        "#GM_config .config_var:hover { background: #fafafa; }",
+        "#GM_config .config_var .field_label {",
+        "  flex: 0 0 220px; font-weight: 500; color: #333; cursor: pointer;",
+        "  font-size: 13px !important; margin: 0 !important;",
+        "}",
+        "#GM_config .radio_label, #GM_config label {",
+        "  display: inline-flex; align-items: center; gap: 4px;",
+        "  margin: 0 12px 0 0 !important; cursor: pointer; font-size: 13px;",
+        "}",
+        "#GM_config input[type='checkbox'], #GM_config input[type='radio'] {",
+        "  width: 16px; height: 16px; accent-color: #2e7d32;",
+        "  cursor: pointer; margin: 0 4px 0 0 !important;",
+        "}",
+        "#GM_config input[type='text'], #GM_config input[type='number'], #GM_config input[type='color'] {",
+        "  padding: 6px 8px !important; border: 1px solid #ccc !important;",
+        "  border-radius: 4px; background: #fff; color: #1a1a1a;",
+        "  font: inherit; flex: 0 1 auto; max-width: 200px;",
+        "}",
+        "#GM_config input[type='number'] { max-width: 100px; }",
+        "#GM_config input:focus, #GM_config textarea:focus {",
+        "  outline: none; border-color: #2e7d32 !important;",
+        "  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);",
+        "}",
+        "#GM_config textarea {",
+        "  flex: 1; min-height: 10em !important;",
+        "  padding: 8px; border: 1px solid #ccc; border-radius: 4px;",
+        "  background: #fafafa; color: #1a1a1a;",
+        "  font: 12px/1.4 ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace !important;",
+        "  resize: vertical; width: auto;",
+        "}",
+        "#GM_config_buttons_holder, #GM_config .reset_holder {",
+        "  display: flex !important; gap: 8px; justify-content: flex-end;",
+        "  padding: 12px 0 0; margin: 12px 0 0; border-top: 1px solid #e0e0e0;",
+        "}",
+        "#GM_config .reset_holder { border-top: 0; margin-top: 6px; padding: 0; justify-content: flex-end; }",
+        "#GM_config .saveclose_buttons {",
+        "  background: #2e7d32 !important; color: #fff !important; border: 0 !important;",
+        "  padding: 8px 16px !important; border-radius: 5px;",
+        "  font: 500 13px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;",
+        "  cursor: pointer; transition: background 0.15s;",
+        "}",
+        "#GM_config .saveclose_buttons:hover { background: #388e3c !important; }",
+        "#GM_config .reset, #GM_config a.reset {",
+        "  background: #f5f5f5; color: #555 !important; border: 1px solid #ccc;",
+        "  padding: 7px 14px; border-radius: 5px; font: 13px/1 inherit;",
+        "  cursor: pointer; text-decoration: none; display: inline-block;",
+        "}",
+        "#GM_config .reset:hover, #GM_config a.reset:hover { background: #e8e8e8; }",
+        "#GM_config select {",
+        "  padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;",
+        "  background: #fff; color: #1a1a1a; font: inherit; cursor: pointer;",
+        "}",
+        // Dark mode (honors OS preference)
+        "@media (prefers-color-scheme: dark) {",
+        "  #GM_config { background: #1f1f1f !important; color: #e0e0e0; }",
+        "  #GM_config .config_header { color: #66bb6a; border-bottom-color: #333; }",
+        "  #GM_config .config_header a { color: #66bb6a; }",
+        "  #GM_config .config_header pre { background: #2a2a2a; color: #ccc; }",
+        "  #GM_config .section_header { background: #2e7d32 !important; }",
+        "  #GM_config .section_desc { background: #2a2a2a !important; color: #aaa !important; }",
+        "  #GM_config .config_var { border-bottom-color: #2a2a2a; }",
+        "  #GM_config .config_var:hover { background: #252525; }",
+        "  #GM_config .config_var .field_label { color: #ddd; }",
+        "  #GM_config input[type='text'], #GM_config input[type='number'], #GM_config select {",
+        "    background: #111 !important; color: #e0e0e0 !important; border-color: #444 !important;",
+        "  }",
+        "  #GM_config textarea { background: #0e0e0e !important; color: #e0e0e0 !important; border-color: #444 !important; }",
+        "  #GM_config_buttons_holder { border-top-color: #333; }",
+        "  #GM_config .reset, #GM_config a.reset {",
+        "    background: #2a2a2a; color: #ccc !important; border-color: #444;",
+        "  }",
+        "  #GM_config .reset:hover, #GM_config a.reset:hover { background: #333; }",
+        "}",
+    ].join("\n");
+
     GM_config.init({
         id: "GM_config",
         title: title,
-        css: "#GM_config_section_1 .config_var, #GM_config_section_2 .config_var, #GM_config_section_3 .config_var { margin: 5% !important;display: inline !important; }",
+        css: GM_CONFIG_CSS,
         fields: {
             thumbnailLink: {
                 section: [
@@ -827,6 +946,13 @@ a.extra-tb {
                         };
                         console.log("infinitescroll options:", infscrollOptions);
                         const infScroll = new InfiniteScroll(container, infscrollOptions);
+
+                        // Expose for RBHighlighter.ensureScrollable() — when our
+                        // hide-below-threshold filter removes enough rows that the
+                        // remaining content is shorter than the viewport, scroll
+                        // events stop firing and InfiniteScroll never advances. The
+                        // highlighter pokes this handle to force a load when needed.
+                        unsafeWindow.__infScroll = infScroll;
 
                         // upon appending a new page
                         infScroll.on("append", function (response, path, items) {
@@ -2250,12 +2376,14 @@ a.extra-tb {
             threshold: "rbhl_threshold",
             color: "rbhl_color",
             hideBelow: "rbhl_hideBelow",
+            autoScrollAssist: "rbhl_autoScrollAssist",
         };
         var DEFAULTS = {
             enabled: true,
             threshold: 100,
             color: "#c0edc8",
             hideBelow: false,
+            autoScrollAssist: true,
         };
 
         // ---- settings I/O ----------------------------------------------------
@@ -2292,6 +2420,8 @@ a.extra-tb {
             },
             get hideBelow() { return gv(KEYS.hideBelow, DEFAULTS.hideBelow); },
             set hideBelow(v) { sv(KEYS.hideBelow, !!v); },
+            get autoScrollAssist() { return gv(KEYS.autoScrollAssist, DEFAULTS.autoScrollAssist); },
+            set autoScrollAssist(v) { sv(KEYS.autoScrollAssist, !!v); },
         };
 
         // ---- live CSS (no inline row.style writes) ---------------------------
@@ -2382,7 +2512,70 @@ a.extra-tb {
             });
 
             if (DEBUG) console.log("[RBHighlighter]", hl, "highlighted /", hidden, "hidden /", rows.length, "rows");
+
+            // After every pass, check whether we've filtered enough rows that
+            // InfiniteScroll has nothing to scroll into. If so, kick it.
+            ensureScrollable();
         }
+
+        // ---- auto-scroll assist ---------------------------------------------
+        // When hideBelow=true filters out enough rows that the page is shorter
+        // than the viewport (or the user has already scrolled past the new
+        // bottom), no scroll events fire and InfiniteScroll never advances.
+        // Detect that case and call infScroll.loadNextPage() directly.
+        //
+        // Capped to AUTO_LOAD_MAX consecutive auto-loads to prevent runaway if
+        // every fetched page is also fully filtered out. Counter resets on any
+        // user-initiated scroll.
+        var autoLoadCount = 0;
+        var lastEnsureCall = 0;
+        var AUTO_LOAD_MAX = 8;
+        var AUTO_LOAD_MIN_INTERVAL_MS = 750;
+
+        function ensureScrollable() {
+            if (!settings.autoScrollAssist) return;
+            var inf = unsafeWindow.__infScroll;
+            if (!inf) return;
+            // Don't pile loads on top of each other.
+            if (inf.isLoading) return;
+            // InfiniteScroll sets canLoad=false when there's no next page.
+            if (inf.canLoad === false) return;
+            if (autoLoadCount >= AUTO_LOAD_MAX) return;
+            var now = Date.now();
+            if (now - lastEnsureCall < AUTO_LOAD_MIN_INTERVAL_MS) return;
+
+            var viewportH = window.innerHeight || document.documentElement.clientHeight;
+            var contentH = document.documentElement.scrollHeight;
+            var scrollY = window.scrollY || window.pageYOffset || 0;
+            var threshold =
+                (inf.options && typeof inf.options.scrollThreshold === "number"
+                    ? inf.options.scrollThreshold
+                    : 600);
+
+            var pageNotFillingViewport = contentH <= viewportH + 100;
+            var atBottom = scrollY + viewportH >= contentH - threshold;
+
+            if (pageNotFillingViewport || atBottom) {
+                lastEnsureCall = now;
+                autoLoadCount++;
+                if (DEBUG)
+                    console.log(
+                        "[RBHighlighter] ensureScrollable: load #" + autoLoadCount,
+                        { contentH: contentH, viewportH: viewportH, atBottom: atBottom }
+                    );
+                try {
+                    if (typeof inf.loadNextPage === "function") inf.loadNextPage();
+                } catch (e) {
+                    if (DEBUG) console.warn("[RBHighlighter] loadNextPage threw:", e);
+                }
+            }
+        }
+
+        // Reset the runaway counter whenever the user actually scrolls — this
+        // is how we tell apart "page still wants more" (auto-load) vs "user is
+        // engaged and we should let normal scroll-driven loading resume."
+        var userScrollHandler = function () { autoLoadCount = 0; };
+        window.addEventListener("scroll", userScrollHandler, { passive: true });
 
         function schedulePass() {
             if (passQueued) return;
@@ -2595,6 +2788,14 @@ a.extra-tb {
             hideBelow.checked = !!hl.settings.hideBelow;
             panel.appendChild(makeRow("Hide rows below threshold", hideBelow));
 
+            var autoScrollAssist = document.createElement("input");
+            autoScrollAssist.type = "checkbox";
+            autoScrollAssist.checked = !!hl.settings.autoScrollAssist;
+            autoScrollAssist.title =
+                "When hide-below filters out enough rows that scroll events stop firing, " +
+                "force the next page to load. Capped at 8 consecutive auto-loads.";
+            panel.appendChild(makeRow("Auto-scroll when filtered short", autoScrollAssist));
+
             // ---- Enhancer shortcuts (read GM_config) ---------------------
             var sec2 = document.createElement("div");
             sec2.className = "section-title";
@@ -2649,10 +2850,12 @@ a.extra-tb {
                 hl.settings.threshold = 100;
                 hl.settings.color = "#c0edc8";
                 hl.settings.hideBelow = false;
+                hl.settings.autoScrollAssist = true;
                 enabled.checked = true;
                 threshold.value = "100";
                 color.value = "#c0edc8";
                 hideBelow.checked = false;
+                autoScrollAssist.checked = true;
                 hl.apply();
             });
             btnrow.appendChild(resetBtn);
@@ -2678,6 +2881,11 @@ a.extra-tb {
             });
             hideBelow.addEventListener("change", function () {
                 hl.settings.hideBelow = hideBelow.checked;
+                hl.apply();
+            });
+            autoScrollAssist.addEventListener("change", function () {
+                hl.settings.autoScrollAssist = autoScrollAssist.checked;
+                // Re-apply so ensureScrollable() runs (or doesn't) on next pass.
                 hl.apply();
             });
 

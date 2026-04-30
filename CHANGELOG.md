@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.2] — 2026-04-30
+
+### Fixed
+- **Auto-scroll stalls when rows are filtered out.** When `Hide rows below
+  threshold` removes enough rows that the remaining content is shorter than
+  the viewport (or the user is already past the new bottom), no scroll
+  events fire and InfiniteScroll never advances. `RBHighlighter` now
+  detects this after every pass and calls `infScroll.loadNextPage()`
+  directly. Capped at 8 consecutive auto-loads, with the counter resetting
+  on any user-initiated scroll. New `rbhl_autoScrollAssist` setting
+  (default on) toggles the behavior. The `infScroll` instance is now
+  exposed via `unsafeWindow.__infScroll` for the highlighter to poke.
+
+### Changed
+- **Restyled the legacy `GM_config` settings panel** (closes #34). Replaced
+  the one-line CSS string passed to `GM_config.init({ css })` with a
+  ~110-line stylesheet that gives the panel a proper card container,
+  flex-laid-out fields, real button hierarchy, monospace `mirrors`
+  textarea (10 lines tall, was clipped to 2), and full
+  `prefers-color-scheme: dark` support. Selectors are all `#GM_config`-
+  prefixed so nothing leaks into the page itself.
+
+### Added
+- New floating-modal toggle: **"Auto-scroll when filtered short"**
+  (`rbhl_autoScrollAssist`, default `true`).
+
 ## [6.2.1] — 2026-04-30
 
 ### Added
@@ -71,6 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Last release of the upstream "RARBG Enhancer Fork 6.0.1 (WORKS)" before this
 repository began. See the userscript header for prior history.
 
-[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.1...HEAD
+[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.2...HEAD
+[6.2.2]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.1...v6.2.2
 [6.2.1]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.0...v6.2.1
 [6.2.0]: https://github.com/tyhallcsu/rarbg-enhancer/releases/tag/v6.2.0

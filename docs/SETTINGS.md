@@ -62,6 +62,24 @@ page reload needed.
 > compose: a row hidden by either remains hidden; toggling one off doesn't
 > resurrect a row the other still wants hidden.
 
+### Auto-scroll when filtered short
+
+- **Storage key**: `rbhl_autoScrollAssist`
+- **Default**: `true`
+- **Behavior**: when `Hide rows below threshold` removes enough rows that
+  the remaining content is shorter than the viewport (or the user has
+  already scrolled past the new bottom), no scroll events fire and
+  InfiniteScroll never advances. With this on, the highlighter detects
+  the condition after each pass and calls `infScroll.loadNextPage()`
+  directly. Capped at 8 consecutive auto-loads to prevent runaway when
+  every fetched page is also fully filtered out — the counter resets on
+  any user-initiated scroll.
+
+> **Why is this not always-on?** If you don't use `Hide rows below
+> threshold`, you'll never hit the fail-mode this fixes. Some users may
+> also prefer the original "manual scroll only" behavior. Toggle off in
+> that case.
+
 ## Enhancer shortcuts (require reload)
 
 These read/write the legacy `GM_config` storage. Because the underlying
@@ -88,8 +106,8 @@ the page (it's how `GM_config` works upstream — we didn't add that).
 
 ### Reset highlight
 Sets `rbhl_enabled = true`, `rbhl_threshold = 100`, `rbhl_color = #c0edc8`,
-`rbhl_hideBelow = false`, and re-applies. Does **not** touch enhancer
-settings.
+`rbhl_hideBelow = false`, `rbhl_autoScrollAssist = true`, and re-applies.
+Does **not** touch enhancer settings.
 
 ## Where to find the storage values
 
@@ -100,6 +118,7 @@ rbhl_enabled: true
 rbhl_threshold: 100
 rbhl_color: "#c0edc8"
 rbhl_hideBelow: false
+rbhl_autoScrollAssist: true
 ```
 
 …alongside the enhancer's own GM_config-managed keys. You can edit them by
