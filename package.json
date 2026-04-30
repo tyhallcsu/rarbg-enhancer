@@ -1,0 +1,32 @@
+{
+    "name": "rarbg-enhancer",
+    "version": "6.2.0",
+    "description": "Tampermonkey userscript for RARBG mirrors — seeder-based row highlighting, filtering, and a floating settings modal.",
+    "private": true,
+    "license": "MIT",
+    "author": "Tyler Hall <tyler@essremodel.com>",
+    "homepage": "https://github.com/tyhallcsu/rarbg-enhancer",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/tyhallcsu/rarbg-enhancer.git"
+    },
+    "bugs": {
+        "url": "https://github.com/tyhallcsu/rarbg-enhancer/issues"
+    },
+    "main": "rarbg-enhancer.user.js",
+    "scripts": {
+        "lint": "eslint scripts/",
+        "lint:fix": "eslint --fix scripts/",
+        "format": "prettier --write \"**/*.{js,json,md,yml,yaml}\"",
+        "format:check": "prettier --check \"**/*.{js,json,md,yml,yaml}\"",
+        "validate": "node scripts/validate-header.js rarbg-enhancer.user.js",
+        "ci": "npm run validate && npm run lint"
+    },
+    "devDependencies": {
+        "eslint": "^8.57.0",
+        "prettier": "^3.3.3"
+    },
+    "engines": {
+        "node": ">=20"
+    }
+}

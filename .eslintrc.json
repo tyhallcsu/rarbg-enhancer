@@ -1,0 +1,39 @@
+{
+    "root": true,
+    "env": {
+        "browser": true,
+        "es2022": true,
+        "node": true,
+        "greasemonkey": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 2022,
+        "sourceType": "script"
+    },
+    "globals": {
+        "GM_setValue": "readonly",
+        "GM_getValue": "readonly",
+        "GM_deleteValue": "readonly",
+        "GM_listValues": "readonly",
+        "GM_xmlhttpRequest": "readonly",
+        "GM_download": "readonly",
+        "GM_registerMenuCommand": "readonly",
+        "GM_config": "readonly",
+        "GM_fetch": "readonly",
+        "unsafeWindow": "readonly",
+        "InfiniteScroll": "readonly",
+        "Mousetrap": "readonly",
+        "OCRAD": "readonly",
+        "Tesseract": "readonly",
+        "$": "readonly",
+        "jQuery": "readonly"
+    },
+    "rules": {
+        "no-unused-vars": "warn",
+        "prefer-const": "error",
+        "no-var": "off",
+        "no-undef": "error",
+        "eqeqeq": ["warn", "smart"]
+    },
+    "ignorePatterns": ["node_modules/", "dist/", "build/"]
+}
