@@ -3,7 +3,7 @@
 Tampermonkey userscript for RARBG mirrors — seeder-based row highlighting, filtering, and a floating settings modal.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-6.2.1-green.svg)](rarbg-enhancer.user.js)
+[![Version](https://img.shields.io/badge/version-6.2.2-green.svg)](rarbg-enhancer.user.js)
 [![Install](https://img.shields.io/badge/install-userscript-orange.svg)](https://github.com/tyhallcsu/rarbg-enhancer/raw/main/rarbg-enhancer.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-supported-success.svg)](https://www.tampermonkey.net/)
 [![Violentmonkey](https://img.shields.io/badge/Violentmonkey-supported-success.svg)](https://violentmonkey.github.io/)
@@ -87,12 +87,13 @@ Click the green **⚙** button in the bottom-right of any RARBG mirror page to o
 | Seeder threshold | `100` | Rows with seeders **≥** this value are highlighted. |
 | Highlight color | `#c0edc8` | Background color applied to highlighted rows. |
 | Hide rows below threshold | `off` | When on, rows below threshold are hidden. |
+| Auto-scroll when filtered short | `on` | Force the next page to load if filtering shrinks the page below the viewport. Capped at 8 consecutive auto-loads. |
 | Large thumbnails | (enhancer) | Toggles enhancer's large-thumbnail mode. |
 | Infinite scrolling | (enhancer) | Toggles enhancer's infinite scroll. |
 | Hide recommended torrents | (enhancer) | Removes the "recommended" sidebar block. |
 | Thumbnail hover sound | (enhancer) | Plays a click sound on thumbnail hover. |
 
-Highlight settings persist across reloads under `GM_setValue` keys `rbhl_enabled`, `rbhl_threshold`, `rbhl_color`, `rbhl_hideBelow`. Enhancer toggles persist via the legacy `GM_config` storage. Highlight settings apply live; enhancer toggles need a reload.
+Highlight settings persist across reloads under `GM_setValue` keys `rbhl_enabled`, `rbhl_threshold`, `rbhl_color`, `rbhl_hideBelow`, `rbhl_autoScrollAssist`. Enhancer toggles persist via the legacy `GM_config` storage. Highlight settings apply live; enhancer toggles need a reload.
 
 You can also open the legacy full settings panel by clicking **"Open full settings…"** in the modal, by pressing `Ctrl+/`, or via the green **⚙ Script Settings** tab the script injects into the page navbar.
 
