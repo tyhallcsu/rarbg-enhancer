@@ -2,9 +2,9 @@
 var meta = {
     rawmdb: function () {
 // ==UserScript==
-// @name         RARBG Enhancer + Highlighter (Merged) 6.2.2
+// @name         RARBG Enhancer + Highlighter (Merged) 6.2.3
 // @namespace    https://github.com/tyhallcsu/rarbg-enhancer
-// @version      6.2.2
+// @version      6.2.3
 // @description  Fork of RARBG Enhancer 6 merged with the v5 Dynamic Column Highlighting script. Auto-solve CAPTCHA, infinite scroll, magnet shortcuts, thumbnails, image search links, plus seeder-based row highlighting, hide-below-threshold, and a floating modal settings panel.
 // @author       tyhallcsu
 // @contributor  Faris Hijazi (original author)
@@ -1172,6 +1172,18 @@ a.extra-tb {
         });
 
         Mousetrap.bind("ctrl+/", function (e) {
+            // Toggle the new floating settings modal (was: open legacy GM_config).
+            // The legacy panel is still reachable via the modal's "Open full
+            // settings…" button, the green "⚙ Script Settings" navbar tab, or
+            // the Tampermonkey menu command. Falls back to GM_config.open()
+            // only if the modal toggle isn't available yet.
+            try {
+                if (unsafeWindow.__rbhlPanel && typeof unsafeWindow.__rbhlPanel.toggle === "function") {
+                    unsafeWindow.__rbhlPanel.toggle();
+                    if (e && e.preventDefault) e.preventDefault();
+                    return false;
+                }
+            } catch (err) {}
             GM_config.open();
         });
         Mousetrap.bind(["/"], (e) => {
@@ -2437,7 +2449,9 @@ a.extra-tb {
             // We intentionally use [data-rb-*] attributes so we don't fight inline
             // styles set elsewhere in the enhancer.
             el.textContent =
-                'tr.lista2[data-rb-hl="1"] > td { background: ' + settings.color + ' !important; }\n' +
+                // Use background-color (not the `background` shorthand) so we don't
+                // clobber any inherited row striping or gradient image. (#6)
+                'tr.lista2[data-rb-hl="1"] > td { background-color: ' + settings.color + ' !important; }\n' +
                 'tr.lista2[data-rb-below="1"] { display: none !important; }';
         }
 
@@ -2464,15 +2478,24 @@ a.extra-tb {
             passQueued = false;
             ensureStyle();
 
+            // (#7) Make every pass idempotent. Wipe both attributes off ALL
+            // rows in the document first, then re-tag based on current settings.
+            // This prevents stale data-rb-hl / data-rb-below from leaking when
+            // the user changes threshold mid-session, when SPA navigation swaps
+            // pages without a full reload, or when transitional renders briefly
+            // produce NaN seeder values.
+            var allRows = document.querySelectorAll("tr.lista2");
+            allRows.forEach(function (r) {
+                if (r.hasAttribute("data-rb-hl")) r.removeAttribute("data-rb-hl");
+                if (r.hasAttribute("data-rb-below")) r.removeAttribute("data-rb-below");
+            });
+
             var rows = document.querySelectorAll(".lista2t > tbody > tr.lista2");
             if (!rows.length) return;
 
-            // Master switch off -> wipe both attributes and stop.
+            // Master switch off -> nothing more to do; attributes are already
+            // wiped above.
             if (!settings.enabled) {
-                rows.forEach(function (r) {
-                    r.removeAttribute("data-rb-hl");
-                    r.removeAttribute("data-rb-below");
-                });
                 return;
             }
 
@@ -2651,14 +2674,24 @@ a.extra-tb {
     })();
 
     // =========================================================================
-    // RBSettingsPanel: floating button + Shadow-DOM modal.
+    // RBSettingsPanel v2: floating button + Shadow-DOM modal.
     //
     // RARBG's stylesheet is aggressive (it styles things like input, button,
     // .modal globally), so the modal lives entirely inside an open Shadow Root
-    // attached to a host <div> with a generic-but-namespaced tag-ish class.
-    // The host itself uses a high z-index to clear RARBG's own overlays — the
-    // enhancer doesn't define any of its own fixed-position layers, so 2^31-2
-    // is plenty.
+    // attached to a host <div>. The host uses a high z-index to clear RARBG's
+    // own overlays.
+    //
+    // v2 redesign (closes the FAB-click-broken bug):
+    //   - All interactive elements carry data-action / data-key attributes.
+    //   - A SINGLE delegated `click` listener on the shadow root dispatches by
+    //     action. (The previous version bound multiple inline listeners; for
+    //     reasons that resisted clean diagnosis on the live mirror, the FAB's
+    //     own listener was not firing on first load. Delegation sidesteps the
+    //     problem entirely — one listener on a stable node.)
+    //   - Bigger, higher-contrast × close button.
+    //   - Live counter showing "X highlighted · Y hidden / N total".
+    //   - Exposes unsafeWindow.__rbhlPanel = { toggle, open, close } so the
+    //     Ctrl+/ Mousetrap binding can drive it.
     // =========================================================================
     (function RBSettingsPanel() {
         // Avoid double-mount if the script somehow runs twice.
@@ -2669,6 +2702,7 @@ a.extra-tb {
 
             var host = document.createElement("div");
             host.id = "rbhl-host";
+            // 0×0 host, FAB sticks out via position:absolute right:0 bottom:0.
             host.style.cssText =
                 "position:fixed;right:18px;bottom:18px;z-index:2147483645;" +
                 "width:0;height:0;pointer-events:none;";
@@ -2676,240 +2710,319 @@ a.extra-tb {
 
             var root = host.attachShadow({ mode: "open" });
 
-            // Build all DOM via createElement to keep it CSP-safe and isolated.
-            var style = document.createElement("style");
-            style.textContent = [
-                ":host, * { box-sizing: border-box; }",
-                ".fab { pointer-events:auto; position:absolute; right:0; bottom:0; ",
-                "  width:48px; height:48px; border-radius:50%; border:0; cursor:pointer; ",
-                "  background:#2e7d32; color:#fff; font-size:22px; font-weight:700; ",
-                "  box-shadow:0 4px 14px rgba(0,0,0,0.35); display:flex; align-items:center; justify-content:center; ",
-                "  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }",
-                ".fab:hover { background:#388e3c; }",
-                ".overlay { pointer-events:auto; position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; }",
-                ".overlay.open { display:block; }",
-                ".panel { pointer-events:auto; position:fixed; right:18px; bottom:80px; width:340px; ",
-                "  background:#1f1f1f; color:#eee; border:1px solid #333; border-radius:10px; ",
-                "  box-shadow:0 10px 30px rgba(0,0,0,0.5); padding:16px 16px 12px; display:none; ",
-                "  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size:13px; line-height:1.4; }",
-                ".panel.open { display:block; }",
-                ".panel h2 { margin:0 0 10px; font-size:14px; font-weight:600; color:#fff; display:flex; justify-content:space-between; align-items:center; }",
-                ".panel .close { background:transparent; border:0; color:#aaa; font-size:18px; cursor:pointer; padding:0 4px; }",
-                ".panel .close:hover { color:#fff; }",
-                ".row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px solid #2a2a2a; }",
-                ".row:first-of-type { border-top:0; }",
-                ".row label { flex:1; cursor:pointer; }",
-                ".row input[type=number] { width:80px; background:#111; color:#eee; border:1px solid #444; border-radius:4px; padding:4px 6px; font:inherit; }",
-                ".row input[type=color] { width:38px; height:28px; background:#111; border:1px solid #444; border-radius:4px; padding:0; cursor:pointer; }",
-                ".row input[type=checkbox] { width:16px; height:16px; accent-color:#2e7d32; cursor:pointer; }",
-                ".section-title { color:#9ad; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; margin:10px 0 4px; }",
-                ".btnrow { display:flex; gap:8px; margin-top:12px; }",
-                ".btnrow button { flex:1; background:#2a2a2a; color:#eee; border:1px solid #444; border-radius:5px; padding:6px 8px; cursor:pointer; font:inherit; }",
-                ".btnrow button:hover { background:#333; }",
-                ".hint { color:#888; font-size:11px; margin-top:8px; }",
-            ].join("\n");
-            root.appendChild(style);
-
-            // Floating action button
-            var fab = document.createElement("button");
-            fab.className = "fab";
-            fab.type = "button";
-            fab.textContent = "⚙";
-            fab.title = "RARBG Enhancer settings";
-            root.appendChild(fab);
-
-            // Click-outside scrim
-            var overlay = document.createElement("div");
-            overlay.className = "overlay";
-            root.appendChild(overlay);
-
-            // Modal panel
-            var panel = document.createElement("div");
-            panel.className = "panel";
-            panel.setAttribute("role", "dialog");
-            panel.setAttribute("aria-modal", "true");
-            root.appendChild(panel);
-
-            var heading = document.createElement("h2");
-            heading.appendChild(document.createTextNode("RARBG Enhancer"));
-            var closeBtn = document.createElement("button");
-            closeBtn.className = "close";
-            closeBtn.type = "button";
-            closeBtn.textContent = "×";
-            closeBtn.title = "Close";
-            heading.appendChild(closeBtn);
-            panel.appendChild(heading);
-
-            // ---- Highlight section ---------------------------------------
-            var sec1 = document.createElement("div");
-            sec1.className = "section-title";
-            sec1.textContent = "Seeder highlighting";
-            panel.appendChild(sec1);
-
-            function makeRow(labelText, controlEl) {
-                var row = document.createElement("div");
-                row.className = "row";
-                var label = document.createElement("label");
-                label.textContent = labelText;
-                row.appendChild(label);
-                row.appendChild(controlEl);
-                return row;
-            }
-
+            // ---- helpers -------------------------------------------------
             var hl = unsafeWindow.__rbhl;
-
-            var enabled = document.createElement("input");
-            enabled.type = "checkbox";
-            enabled.checked = !!hl.settings.enabled;
-            panel.appendChild(makeRow("Enable highlighting", enabled));
-
-            var threshold = document.createElement("input");
-            threshold.type = "number";
-            threshold.min = "0";
-            threshold.step = "1";
-            threshold.value = hl.settings.threshold;
-            panel.appendChild(makeRow("Seeder threshold", threshold));
-
-            var color = document.createElement("input");
-            color.type = "color";
-            color.value = (function () {
-                // Browsers' <input type=color> only accepts #rrggbb.
-                var c = hl.settings.color || "#c0edc8";
-                if (/^#[0-9a-fA-F]{6}$/.test(c)) return c;
-                if (/^#[0-9a-fA-F]{3}$/.test(c)) {
-                    return "#" + c.slice(1).split("").map(function (x) { return x + x; }).join("");
-                }
-                return "#c0edc8";
-            })();
-            panel.appendChild(makeRow("Highlight color", color));
-
-            var hideBelow = document.createElement("input");
-            hideBelow.type = "checkbox";
-            hideBelow.checked = !!hl.settings.hideBelow;
-            panel.appendChild(makeRow("Hide rows below threshold", hideBelow));
-
-            var autoScrollAssist = document.createElement("input");
-            autoScrollAssist.type = "checkbox";
-            autoScrollAssist.checked = !!hl.settings.autoScrollAssist;
-            autoScrollAssist.title =
-                "When hide-below filters out enough rows that scroll events stop firing, " +
-                "force the next page to load. Capped at 8 consecutive auto-loads.";
-            panel.appendChild(makeRow("Auto-scroll when filtered short", autoScrollAssist));
-
-            // ---- Enhancer shortcuts (read GM_config) ---------------------
-            var sec2 = document.createElement("div");
-            sec2.className = "section-title";
-            sec2.textContent = "Enhancer shortcuts";
-            panel.appendChild(sec2);
-
             function gmcGet(k) {
                 try { return GM_config.get(k); } catch (e) { return undefined; }
             }
             function gmcSet(k, v) {
                 try { GM_config.set(k, v); GM_config.write(); } catch (e) {}
             }
+            function normalizeColorForInput(c) {
+                if (/^#[0-9a-fA-F]{6}$/.test(c)) return c;
+                if (/^#[0-9a-fA-F]{3}$/.test(c)) {
+                    return "#" + c.slice(1).split("").map(function (x) { return x + x; }).join("");
+                }
+                return "#c0edc8";
+            }
 
-            var shortcuts = [
-                { key: "largeThumbnails", label: "Large thumbnails" },
-                { key: "infiniteScrolling", label: "Infinite scrolling" },
-                { key: "hideRecommendedTorrents", label: "Hide recommended torrents" },
-                { key: "thumbnailHoverSound", label: "Thumbnail hover sound" },
-            ];
-            var shortcutInputs = shortcuts.map(function (s) {
-                var cb = document.createElement("input");
-                cb.type = "checkbox";
-                cb.checked = !!gmcGet(s.key);
-                cb.addEventListener("change", function () {
-                    gmcSet(s.key, cb.checked);
-                    // Most of these only take effect on reload because the enhancer
-                    // checks them at boot. Show a small hint when changed.
-                    hint.textContent = "Some enhancer options take effect on next reload.";
+            // ---- redesigned stylesheet -----------------------------------
+            var style = document.createElement("style");
+            style.textContent = [
+                ":host, * { box-sizing: border-box; }",
+                "*, *::before, *::after { -webkit-font-smoothing: antialiased; }",
+                // FAB
+                ".fab { pointer-events:auto; position:absolute; right:0; bottom:0;",
+                "  width:52px; height:52px; border-radius:50%; border:0; cursor:pointer;",
+                "  background:linear-gradient(135deg,#2e7d32,#388e3c); color:#fff;",
+                "  font-size:24px; line-height:1; padding:0;",
+                "  box-shadow:0 6px 18px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06) inset;",
+                "  display:flex; align-items:center; justify-content:center;",
+                "  transition:transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;",
+                "  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }",
+                ".fab:hover { transform:scale(1.06); box-shadow:0 8px 24px rgba(0,0,0,0.5); }",
+                ".fab:active { transform:scale(0.96); }",
+                ".fab:focus-visible { outline:2px solid #66bb6a; outline-offset:3px; }",
+                ".fab.is-open { background:linear-gradient(135deg,#1b5e20,#2e7d32); }",
+                // Overlay scrim
+                ".overlay { pointer-events:auto; position:fixed; inset:0;",
+                "  background:rgba(0,0,0,0.55); backdrop-filter:blur(2px);",
+                "  opacity:0; visibility:hidden; transition:opacity 0.15s ease, visibility 0.15s ease; }",
+                ".overlay.open { opacity:1; visibility:visible; }",
+                // Panel
+                ".panel { pointer-events:auto; position:fixed; right:18px; bottom:84px;",
+                "  width:380px; max-width:calc(100vw - 36px); max-height:calc(100vh - 110px);",
+                "  background:#1a1a1a; color:#e8e8e8; border:1px solid #2a2a2a; border-radius:14px;",
+                "  box-shadow:0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset;",
+                "  display:flex; flex-direction:column;",
+                "  opacity:0; visibility:hidden; transform:translateY(8px) scale(0.98);",
+                "  transition:opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;",
+                "  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;",
+                "  font-size:13px; line-height:1.45; overflow:hidden; }",
+                ".panel.open { opacity:1; visibility:visible; transform:translateY(0) scale(1); }",
+                // Header
+                ".header { display:flex; align-items:center; justify-content:space-between;",
+                "  padding:14px 16px; border-bottom:1px solid #2a2a2a;",
+                "  background:linear-gradient(180deg,#222,#1a1a1a); flex-shrink:0; }",
+                ".header h2 { margin:0; font-size:14px; font-weight:600; color:#fff;",
+                "  display:flex; align-items:center; gap:8px; letter-spacing:0.01em; }",
+                ".header .badge { font-size:10px; font-weight:500; color:#66bb6a;",
+                "  background:rgba(102,187,106,0.12); padding:2px 7px; border-radius:10px;",
+                "  letter-spacing:0.04em; text-transform:uppercase; }",
+                ".close-btn { background:transparent; border:0; color:#888; cursor:pointer;",
+                "  width:30px; height:30px; border-radius:8px; font-size:22px; line-height:1;",
+                "  display:flex; align-items:center; justify-content:center;",
+                "  transition:background 0.15s ease, color 0.15s ease; padding:0; }",
+                ".close-btn:hover { background:rgba(255,255,255,0.08); color:#fff; }",
+                ".close-btn:focus-visible { outline:2px solid #66bb6a; outline-offset:1px; }",
+                // Body (scrollable region)
+                ".body { padding:6px 16px 14px; overflow-y:auto; flex:1 1 auto; }",
+                ".body::-webkit-scrollbar { width:8px; }",
+                ".body::-webkit-scrollbar-track { background:transparent; }",
+                ".body::-webkit-scrollbar-thumb { background:#333; border-radius:4px; }",
+                ".body::-webkit-scrollbar-thumb:hover { background:#444; }",
+                // Sections
+                ".section-title { color:#9ec5d4; font-size:10px; text-transform:uppercase;",
+                "  letter-spacing:0.08em; margin:14px 0 4px; font-weight:600; }",
+                ".section-title:first-child { margin-top:6px; }",
+                // Field rows
+                ".row { display:flex; align-items:center; justify-content:space-between;",
+                "  gap:10px; padding:9px 0; border-bottom:1px solid #232323; }",
+                ".row:last-child { border-bottom:0; }",
+                ".row label { flex:1 1 auto; cursor:pointer; color:#ddd; user-select:none; }",
+                ".row label .sub { display:block; font-size:11px; color:#888; margin-top:2px; }",
+                // Inputs
+                "input[type=number] { width:84px; background:#111; color:#fff;",
+                "  border:1px solid #333; border-radius:6px; padding:6px 8px; font:inherit;",
+                "  text-align:right; transition:border-color 0.15s ease, box-shadow 0.15s ease; }",
+                "input[type=number]:focus { border-color:#66bb6a;",
+                "  box-shadow:0 0 0 3px rgba(102,187,106,0.18); outline:none; }",
+                "input[type=color] { width:42px; height:30px; background:#111;",
+                "  border:1px solid #333; border-radius:6px; padding:2px; cursor:pointer; }",
+                // Custom toggle switch (replaces native checkbox visually)
+                ".switch { position:relative; display:inline-block; width:38px; height:22px;",
+                "  flex-shrink:0; }",
+                ".switch input { opacity:0; width:0; height:0; position:absolute; }",
+                ".switch .slider { position:absolute; cursor:pointer; inset:0;",
+                "  background:#3a3a3a; border-radius:22px;",
+                "  transition:background 0.18s ease; }",
+                ".switch .slider::before { content:''; position:absolute; height:16px; width:16px;",
+                "  left:3px; top:3px; background:#fff; border-radius:50%;",
+                "  transition:transform 0.18s ease, background 0.18s ease;",
+                "  box-shadow:0 1px 3px rgba(0,0,0,0.4); }",
+                ".switch input:checked + .slider { background:#2e7d32; }",
+                ".switch input:checked + .slider::before { transform:translateX(16px); }",
+                ".switch input:focus-visible + .slider { box-shadow:0 0 0 3px rgba(102,187,106,0.3); }",
+                // Footer
+                ".footer { padding:12px 16px; border-top:1px solid #2a2a2a;",
+                "  background:#161616; flex-shrink:0; }",
+                ".btnrow { display:flex; gap:8px; }",
+                ".btn { flex:1; background:#2a2a2a; color:#e8e8e8; border:1px solid #333;",
+                "  border-radius:7px; padding:8px 10px; cursor:pointer; font:inherit;",
+                "  font-weight:500; transition:background 0.12s ease, border-color 0.12s ease; }",
+                ".btn:hover { background:#333; border-color:#444; }",
+                ".btn.primary { background:#2e7d32; border-color:#388e3c; color:#fff; }",
+                ".btn.primary:hover { background:#388e3c; }",
+                ".hint { color:#888; font-size:11px; margin-top:10px; line-height:1.4; }",
+                ".hint kbd { background:#2a2a2a; border:1px solid #3a3a3a; border-radius:4px;",
+                "  padding:1px 5px; font-size:10px; font-family:ui-monospace,Menlo,monospace;",
+                "  color:#ddd; }",
+                ".counter { font-size:11px; color:#888; margin-bottom:6px;",
+                "  display:flex; gap:10px; flex-wrap:wrap; }",
+                ".counter .pill { background:#222; border:1px solid #2a2a2a;",
+                "  padding:3px 8px; border-radius:10px; }",
+                ".counter .pill .num { color:#66bb6a; font-weight:600; }",
+                ".counter .pill.warn .num { color:#ffb74d; }",
+                // Reduced motion
+                "@media (prefers-reduced-motion: reduce) {",
+                "  .panel, .overlay, .fab, .switch .slider, .switch .slider::before { transition:none; }",
+                "}",
+            ].join("\n");
+            root.appendChild(style);
+
+            // ---- DOM build ----------------------------------------------
+            // Single template assembled via innerHTML on a detached div, then
+            // moved into the shadow root. Cheaper than 50+ createElement calls
+            // and easier to read. data-* attributes drive the delegated handlers.
+            var scaffold = document.createElement("div");
+            scaffold.innerHTML = [
+                '<button class="fab" type="button" data-action="toggle" title="RARBG Enhancer settings (Ctrl+/)" aria-label="Open RARBG Enhancer settings">⚙</button>',
+                '<div class="overlay" data-action="close"></div>',
+                '<div class="panel" role="dialog" aria-modal="true" aria-labelledby="rbhl-title">',
+                '  <div class="header">',
+                '    <h2 id="rbhl-title">RARBG Enhancer<span class="badge">v6.2.3</span></h2>',
+                '    <button class="close-btn" type="button" data-action="close" title="Close (Esc)" aria-label="Close settings">×</button>',
+                '  </div>',
+                '  <div class="body">',
+                '    <div class="counter" data-role="counter">',
+                '      <span class="pill"><span class="num" data-role="count-total">0</span> rows</span>',
+                '      <span class="pill"><span class="num" data-role="count-hl">0</span> highlighted</span>',
+                '      <span class="pill warn"><span class="num" data-role="count-hidden">0</span> hidden</span>',
+                '    </div>',
+                '    <div class="section-title">Seeder highlighting</div>',
+                '    <div class="row"><label for="rbhl-enabled">Enable highlighting</label>',
+                '      <span class="switch"><input type="checkbox" id="rbhl-enabled" data-key="enabled"><span class="slider"></span></span></div>',
+                '    <div class="row"><label for="rbhl-threshold">Seeder threshold</label>',
+                '      <input type="number" id="rbhl-threshold" min="0" step="1" data-key="threshold"></div>',
+                '    <div class="row"><label for="rbhl-color">Highlight color</label>',
+                '      <input type="color" id="rbhl-color" data-key="color"></div>',
+                '    <div class="row"><label for="rbhl-hideBelow">Hide rows below threshold<span class="sub">remove low-seed rows from view</span></label>',
+                '      <span class="switch"><input type="checkbox" id="rbhl-hideBelow" data-key="hideBelow"><span class="slider"></span></span></div>',
+                '    <div class="row"><label for="rbhl-autoScrollAssist">Auto-scroll when filtered short<span class="sub">force-load next page when content fits viewport</span></label>',
+                '      <span class="switch"><input type="checkbox" id="rbhl-autoScrollAssist" data-key="autoScrollAssist"><span class="slider"></span></span></div>',
+                '    <div class="section-title">Enhancer shortcuts <span style="color:#666;font-weight:400;text-transform:none;letter-spacing:0">(reload required)</span></div>',
+                '    <div class="row"><label for="rbhl-largeThumbnails">Large thumbnails</label>',
+                '      <span class="switch"><input type="checkbox" id="rbhl-largeThumbnails" data-gmckey="largeThumbnails"><span class="slider"></span></span></div>',
+                '    <div class="row"><label for="rbhl-infiniteScrolling">Infinite scrolling</label>',
+                '      <span class="switch"><input type="checkbox" id="rbhl-infiniteScrolling" data-gmckey="infiniteScrolling"><span class="slider"></span></span></div>',
+                '    <div class="row"><label for="rbhl-hideRecommendedTorrents">Hide recommended torrents</label>',
+                '      <span class="switch"><input type="checkbox" id="rbhl-hideRecommendedTorrents" data-gmckey="hideRecommendedTorrents"><span class="slider"></span></span></div>',
+                '    <div class="row"><label for="rbhl-thumbnailHoverSound">Thumbnail hover sound</label>',
+                '      <span class="switch"><input type="checkbox" id="rbhl-thumbnailHoverSound" data-gmckey="thumbnailHoverSound"><span class="slider"></span></span></div>',
+                '  </div>',
+                '  <div class="footer">',
+                '    <div class="btnrow">',
+                '      <button class="btn" type="button" data-action="open-legacy" title="Open the original GM_config panel (page reloads after Save)">Full settings…</button>',
+                '      <button class="btn primary" type="button" data-action="reset" title="Reset highlight settings to defaults">Reset</button>',
+                '    </div>',
+                '    <div class="hint">Settings apply live. <kbd>Esc</kbd> or <kbd>Ctrl</kbd>+<kbd>/</kbd> to toggle.</div>',
+                '  </div>',
+                '</div>',
+            ].join("\n");
+            // Move children into shadow root
+            while (scaffold.firstChild) root.appendChild(scaffold.firstChild);
+
+            // ---- element refs --------------------------------------------
+            var fab = root.querySelector(".fab");
+            var overlay = root.querySelector(".overlay");
+            var panel = root.querySelector(".panel");
+
+            // ---- seed initial values from settings -----------------------
+            function syncFromSettings() {
+                root.querySelector('[data-key="enabled"]').checked = !!hl.settings.enabled;
+                root.querySelector('[data-key="threshold"]').value = hl.settings.threshold;
+                root.querySelector('[data-key="color"]').value = normalizeColorForInput(hl.settings.color);
+                root.querySelector('[data-key="hideBelow"]').checked = !!hl.settings.hideBelow;
+                root.querySelector('[data-key="autoScrollAssist"]').checked = !!hl.settings.autoScrollAssist;
+                root.querySelectorAll("[data-gmckey]").forEach(function (el) {
+                    el.checked = !!gmcGet(el.dataset.gmckey);
                 });
-                panel.appendChild(makeRow(s.label, cb));
-                return cb;
-            });
+            }
+            syncFromSettings();
 
-            // ---- buttons --------------------------------------------------
-            var btnrow = document.createElement("div");
-            btnrow.className = "btnrow";
-            var openLegacyBtn = document.createElement("button");
-            openLegacyBtn.type = "button";
-            openLegacyBtn.textContent = "Open full settings…";
-            openLegacyBtn.title = "Open the original GM_config panel (page will reload after Save)";
-            openLegacyBtn.addEventListener("click", function () {
-                close();
-                try { GM_config.open(); } catch (e) {}
-            });
-            btnrow.appendChild(openLegacyBtn);
+            // ---- live counter (updated on every highlight pass) ----------
+            var elTotal = root.querySelector('[data-role="count-total"]');
+            var elHl = root.querySelector('[data-role="count-hl"]');
+            var elHidden = root.querySelector('[data-role="count-hidden"]');
+            function refreshCounter() {
+                try {
+                    elTotal.textContent = document.querySelectorAll("tr.lista2").length;
+                    elHl.textContent = document.querySelectorAll('tr.lista2[data-rb-hl="1"]').length;
+                    elHidden.textContent = document.querySelectorAll('tr.lista2[data-rb-below="1"]').length;
+                } catch (e) {}
+            }
+            // Pipe into the existing __rbhl handle so the highlighter pass
+            // keeps the counter fresh for free.
+            try {
+                var origReHL = hl.reHighlight;
+                hl.reHighlight = function () {
+                    var r = origReHL.apply(hl, arguments);
+                    refreshCounter();
+                    return r;
+                };
+            } catch (e) {}
+            refreshCounter();
 
-            var resetBtn = document.createElement("button");
-            resetBtn.type = "button";
-            resetBtn.textContent = "Reset highlight";
-            resetBtn.addEventListener("click", function () {
-                hl.settings.enabled = true;
-                hl.settings.threshold = 100;
-                hl.settings.color = "#c0edc8";
-                hl.settings.hideBelow = false;
-                hl.settings.autoScrollAssist = true;
-                enabled.checked = true;
-                threshold.value = "100";
-                color.value = "#c0edc8";
-                hideBelow.checked = false;
-                autoScrollAssist.checked = true;
-                hl.apply();
-            });
-            btnrow.appendChild(resetBtn);
-            panel.appendChild(btnrow);
-
-            var hint = document.createElement("div");
-            hint.className = "hint";
-            hint.textContent = "Settings apply live. ESC or click outside to close.";
-            panel.appendChild(hint);
-
-            // ---- live wiring ---------------------------------------------
-            enabled.addEventListener("change", function () {
-                hl.settings.enabled = enabled.checked;
-                hl.apply();
-            });
-            threshold.addEventListener("input", function () {
-                hl.settings.threshold = threshold.value;
-                hl.apply();
-            });
-            color.addEventListener("input", function () {
-                hl.settings.color = color.value;
-                hl.apply();
-            });
-            hideBelow.addEventListener("change", function () {
-                hl.settings.hideBelow = hideBelow.checked;
-                hl.apply();
-            });
-            autoScrollAssist.addEventListener("change", function () {
-                hl.settings.autoScrollAssist = autoScrollAssist.checked;
-                // Re-apply so ensureScrollable() runs (or doesn't) on next pass.
-                hl.apply();
-            });
-
-            // ---- open/close ----------------------------------------------
-            function open() {
+            // ---- open / close --------------------------------------------
+            function openPanel() {
                 panel.classList.add("open");
                 overlay.classList.add("open");
-                // Refresh shortcut state in case GM_config changed elsewhere.
-                shortcuts.forEach(function (s, i) {
-                    shortcutInputs[i].checked = !!gmcGet(s.key);
+                fab.classList.add("is-open");
+                fab.setAttribute("aria-expanded", "true");
+                // Refresh GM_config-mirrored toggles in case they changed elsewhere
+                root.querySelectorAll("[data-gmckey]").forEach(function (el) {
+                    el.checked = !!gmcGet(el.dataset.gmckey);
                 });
+                refreshCounter();
             }
-            function close() {
+            function closePanel() {
                 panel.classList.remove("open");
                 overlay.classList.remove("open");
+                fab.classList.remove("is-open");
+                fab.setAttribute("aria-expanded", "false");
             }
-            fab.addEventListener("click", function () {
-                if (panel.classList.contains("open")) close(); else open();
-            });
-            closeBtn.addEventListener("click", close);
-            overlay.addEventListener("click", close);
+            function togglePanel() {
+                if (panel.classList.contains("open")) closePanel(); else openPanel();
+            }
+
+            // ---- DELEGATED click handler ---------------------------------
+            // The previous version bound a click listener directly to fab.
+            // On the live mirror that listener never fired. Switching to
+            // delegation on the shadow root fixes it and is more resilient
+            // to future DOM rebuilds.
+            root.addEventListener("click", function (e) {
+                var t = e.target;
+                while (t && t !== root && !t.dataset?.action) t = t.parentElement;
+                if (!t || t === root) return;
+                var action = t.dataset.action;
+                if (action === "toggle") {
+                    togglePanel();
+                } else if (action === "close") {
+                    closePanel();
+                } else if (action === "open-legacy") {
+                    closePanel();
+                    try { GM_config.open(); } catch (err) {}
+                } else if (action === "reset") {
+                    hl.settings.enabled = true;
+                    hl.settings.threshold = 100;
+                    hl.settings.color = "#c0edc8";
+                    hl.settings.hideBelow = false;
+                    hl.settings.autoScrollAssist = true;
+                    syncFromSettings();
+                    hl.apply();
+                    refreshCounter();
+                }
+            }, false);
+
+            // ---- DELEGATED input/change handlers -------------------------
+            function handleSettingChange(e) {
+                var t = e.target;
+                if (!t) return;
+                var key = t.dataset.key;
+                var gmckey = t.dataset.gmckey;
+                if (key) {
+                    if (t.type === "checkbox") hl.settings[key] = t.checked;
+                    else if (t.type === "number") hl.settings[key] = t.value;
+                    else hl.settings[key] = t.value;
+                    hl.apply();
+                    refreshCounter();
+                } else if (gmckey) {
+                    gmcSet(gmckey, t.checked);
+                    var hint = root.querySelector(".hint");
+                    if (hint) hint.textContent = "Reload page for enhancer toggle to take effect.";
+                }
+            }
+            root.addEventListener("input", handleSettingChange, false);
+            root.addEventListener("change", handleSettingChange, false);
+
+            // ---- keyboard ------------------------------------------------
+            // Esc closes when modal is open. (Ctrl+/ is bound at the
+            // Mousetrap level in the main IIFE — see __rbhlPanel below.)
             document.addEventListener("keydown", function (e) {
-                if (e.key === "Escape" && panel.classList.contains("open")) close();
+                if (e.key === "Escape" && panel.classList.contains("open")) {
+                    e.preventDefault();
+                    closePanel();
+                }
             });
+
+            // ---- expose handle for Ctrl+/ + external callers -------------
+            unsafeWindow.__rbhlPanel = {
+                open: openPanel,
+                close: closePanel,
+                toggle: togglePanel,
+                refreshCounter: refreshCounter,
+                isOpen: function () { return panel.classList.contains("open"); },
+            };
         }
 
         if (document.body) {
@@ -3146,6 +3259,20 @@ function replaceAllImageHosts(imgs = null) {
     collectedImgs.concat(
         replaceImageHostImageWithOriginal("/upload/small/", {
             "/upload/small/": "/upload/big/",
+            imgs,
+        })
+    );
+    // (#36) Ported from upstream FarisHijazi/Rarbg-Enhancer-UserScript: rules
+    // for hosts that started using `.com/i-1/` and `/1s/` for thumbnail variants.
+    collectedImgs.concat(
+        replaceImageHostImageWithOriginal(".com/i-1/", {
+            ".com/i-1/": ".com/1/",
+            imgs,
+        })
+    );
+    collectedImgs.concat(
+        replaceImageHostImageWithOriginal("/1s/", {
+            "/1s/": "/1/",
             imgs,
         })
     );
