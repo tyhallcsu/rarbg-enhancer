@@ -8,19 +8,20 @@ is faster.
 
 Both options are free, open source, and work on every major browser.
 
-| Manager | Browsers | Link |
-|---|---|---|
-| **Tampermonkey** | Chrome, Edge, Firefox, Safari, Opera | <https://www.tampermonkey.net/> |
-| **Violentmonkey** | Chrome, Edge, Firefox | <https://violentmonkey.github.io/> |
+<table>
+<tr>
+<td align="center"><a href="https://www.tampermonkey.net/"><img src="icons/tampermonkey_logo.png" width="60"></a></td>
+<td><b>Tampermonkey</b><br>Chrome, Edge, Firefox, Safari, Opera<br><a href="https://www.tampermonkey.net/">tampermonkey.net</a></td>
+</tr>
+<tr>
+<td align="center">🐒</td>
+<td><b>Violentmonkey</b><br>Chrome, Edge, Firefox<br><a href="https://violentmonkey.github.io/">violentmonkey.github.io</a></td>
+</tr>
+</table>
 
-Tampermonkey is the more common pick and what this script is primarily tested
-against, but Violentmonkey works.
+Tampermonkey is the more common pick and what this script is primarily tested against, but Violentmonkey works.
 
-> **Chrome / Edge users**: enable **Developer mode** in
-> `chrome://extensions` (or `edge://extensions`) before the manager will let
-> arbitrary userscripts run. This is a Chrome/Edge requirement, not ours.
-
-![placeholder — Chrome dev mode toggle](screenshot-dev-mode.png)
+> **Chrome / Edge users**: enable **Developer mode** in `chrome://extensions` (or `edge://extensions`) before the manager will let arbitrary userscripts run. This is a Chrome/Edge requirement, not ours.
 
 ## 2. Install the script
 
@@ -28,23 +29,25 @@ against, but Violentmonkey works.
 
 Click the install link:
 
+<a href="https://github.com/tyhallcsu/rarbg-enhancer/raw/main/rarbg-enhancer.user.js"><img src="icons/download_button.png" width="60"></a>
+
 👉 **[Install rarbg-enhancer.user.js](https://github.com/tyhallcsu/rarbg-enhancer/raw/main/rarbg-enhancer.user.js)**
 
-Your manager will detect the userscript and show its install screen, listing
-the metadata, `@require`d libraries, and `@grant`s. Review and click **Install**.
+Your manager will detect the userscript and show its install screen, listing the metadata, `@require`d libraries, and `@grant`s. Review and click **Install**.
 
-![placeholder — Tampermonkey install dialog](screenshot-install-dialog.png)
+> **Auto-update note (private repo):** the userscript's `@updateURL` and `@downloadURL` point at `https://github.com/tyhallcsu/rarbg-enhancer/raw/main/rarbg-enhancer.user.js`. While the repo is private, your userscript manager cannot fetch this URL anonymously and will not auto-update — you'll need to re-install via the link above when a new version ships, or paste a personal access token into the URL. Once the repo is made public, auto-updates work transparently.
 
 ### From a downloaded copy
 
-1. Download [`rarbg-enhancer.user.js`](../rarbg-enhancer.user.js) (or `git clone`
-   the repo).
-2. **Tampermonkey** → **Dashboard** → **Utilities** → **Import from file** →
-   pick the `.user.js` file. Or simply drag the file onto the Tampermonkey
-   dashboard tab.
+1. Download [`rarbg-enhancer.user.js`](../rarbg-enhancer.user.js) (or `git clone` the repo).
+2. **Tampermonkey** → **Dashboard** → **Utilities** → **Import from file** → pick the `.user.js` file. Or simply drag the file onto the Tampermonkey dashboard tab.
 3. **Violentmonkey** → **Dashboard** → **+** → **Install from URL or file**.
 
-![placeholder — Tampermonkey dashboard](screenshot-dashboard.png)
+The legacy enhancer settings panel (opened via `Ctrl+/` or the **⚙ Script Settings** tab the script injects) looks like this:
+
+![Legacy GM_config options panel](screenshots/rarbg-options-page.png)
+
+> The new floating Shadow-DOM modal in the bottom-right is the recommended way to drive the highlighter; the legacy panel covers everything else and is tracked for a redesign in [#34](https://github.com/tyhallcsu/rarbg-enhancer/issues/34).
 
 ## 3. Verify it's running
 
@@ -53,8 +56,13 @@ the metadata, `@require`d libraries, and `@grant`s. Review and click **Install**
    - A green **⚙** floating button bottom-right.
    - A green **⚙ Script Settings** tab in the page navbar.
    - Rows with seeders ≥ 100 highlighted in pale green.
+   - Inline thumbnails on torrent rows (if `largeThumbnails` is enabled).
 
-![placeholder — running on a torrents.php page](screenshot-running.png)
+![Running on a torrents.php page](screenshots/Screenshot_Rarbg_general.png)
+
+The little ⚙ icon in the page navbar — that's the legacy settings tab the script injects:
+
+![Options button in navbar](screenshots/options_button.png)
 
 If nothing happens:
 - Check Tampermonkey's icon — it should show "1" (or higher) for the active
