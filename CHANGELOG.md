@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.1] — 2026-04-30
+
+### Added
+- Real demo screenshots and icons under `docs/screenshots/` and `docs/icons/`,
+  imported from upstream
+  [FarisHijazi/Rarbg-Enhancer-UserScript](https://github.com/FarisHijazi/Rarbg-Enhancer-UserScript)
+  under MIT. README and `docs/INSTALL.md` now use them in place of placeholders.
+- `docs/CODE-WALKTHROUGH.md` — adapted from upstream `docs.md`, with notes
+  about the highlighter's column detection and CSS attribute approach.
+- `@homepageURL` and `@supportURL` userscript-header fields pointing at this
+  repo and its issues page.
+
+### Changed
+- Fixed `@updateURL` and `@downloadURL` to point at the canonical raw URL of
+  this repo (`tyhallcsu/rarbg-enhancer` on `main`). Previously pointed at a
+  non-existent fork URL.
+- Normalized `@updateURL` capitalization (was `@updateUrl`).
+- Updated `@namespace` to match the actual repo (`tyhallcsu/rarbg-enhancer`).
+
+### Notes
+- Auto-update via `@updateURL` will not work while the repo is private —
+  GitHub raw URLs require authentication for private repos. Re-install via
+  the install link or make the repo public for transparent auto-updates.
+
 ## [6.2.0] — 2026-04-30
 
 ### Added
@@ -47,5 +71,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Last release of the upstream "RARBG Enhancer Fork 6.0.1 (WORKS)" before this
 repository began. See the userscript header for prior history.
 
-[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.0...HEAD
+[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.1...HEAD
+[6.2.1]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.0...v6.2.1
 [6.2.0]: https://github.com/tyhallcsu/rarbg-enhancer/releases/tag/v6.2.0

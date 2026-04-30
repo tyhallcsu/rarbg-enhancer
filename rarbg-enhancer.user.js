@@ -2,14 +2,16 @@
 var meta = {
     rawmdb: function () {
 // ==UserScript==
-// @name         RARBG Enhancer + Highlighter (Merged) 6.2.0
-// @namespace    https://github.com/tyhallcsu/Rarbg-Enhancer-UserScript
-// @version      6.2.0
+// @name         RARBG Enhancer + Highlighter (Merged) 6.2.1
+// @namespace    https://github.com/tyhallcsu/rarbg-enhancer
+// @version      6.2.1
 // @description  Fork of RARBG Enhancer 6 merged with the v5 Dynamic Column Highlighting script. Auto-solve CAPTCHA, infinite scroll, magnet shortcuts, thumbnails, image search links, plus seeder-based row highlighting, hide-below-threshold, and a floating modal settings panel.
 // @author       tyhallcsu
 // @contributor  Faris Hijazi (original author)
 // @contributor  darkred (some code from https://greasyfork.org/en/users/2160-darkred)
 // @contributor  sharmanhall (v5 Dynamic Column Highlighting logic — https://greasyfork.org/scripts/493324)
+// @homepageURL  https://github.com/tyhallcsu/rarbg-enhancer
+// @supportURL   https://github.com/tyhallcsu/rarbg-enhancer/issues
 // @grant        unsafeWindow
 // @grant        GM_setValue
 // @grant        GM_getValue
@@ -18,8 +20,8 @@ var meta = {
 // @grant        GM_registerMenuCommand
 // @icon         https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://rarbg.to&size=16
 // @run-at       document-idle
-// @updateUrl    https://github.com/tyhallcsu/Rarbg-Enhancer-UserScript/raw/master/Rarbg-Enhancer-UserScript.user.js
-// @downloadURL  https://github.com/tyhallcsu/Rarbg-Enhancer-UserScript/raw/master/Rarbg-Enhancer-UserScript.user.js
+// @updateURL    https://github.com/tyhallcsu/rarbg-enhancer/raw/main/rarbg-enhancer.user.js
+// @downloadURL  https://github.com/tyhallcsu/rarbg-enhancer/raw/main/rarbg-enhancer.user.js
 // @require      https://code.jquery.com/jquery-3.4.0.min.js
 // @require      https://unpkg.com/infinite-scroll@3.0.5/dist/infinite-scroll.pkgd.min.js
 // @require      https://raw.githubusercontent.com/ccampbell/mousetrap/master/mousetrap.min.js
