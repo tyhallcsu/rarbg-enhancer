@@ -23,7 +23,7 @@
         "ci": "npm run validate && npm run lint"
     },
     "devDependencies": {
-        "eslint": "^8.57.0",
+        "eslint": "^10.2.1",
         "prettier": "^3.3.3"
     },
     "engines": {
