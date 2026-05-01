@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.8] — 2026-04-30
+
+### Changed
+- **README hero image** is now an original screenshot of the floating
+  Shadow-DOM settings modal open on a live `rargb.to` page, showing the
+  live counter pills (rows / highlighted / hidden) and all toggle
+  sections. Replaces the upstream-inherited general-page screenshot
+  that didn't surface the differentiating feature of this fork. Old
+  asset (`docs/screenshots/Screenshot_Rarbg_general.png`) is preserved
+  on disk for reference.
+- **README "New in this fork" section** gains a dedicated subsection
+  for the floating settings modal, calling out the live-applied counter
+  pills, `Esc` / `Ctrl`+`/` keyboard shortcuts, click-outside-to-close
+  scrim, and Shadow-DOM isolation from RARBG's page CSS.
+- **Auto-update note** in README and `docs/INSTALL.md` no longer warns
+  about the private-repo limitation. With the repo public, Tampermonkey's
+  `@updateURL` polling works transparently.
+- **In-file CHANGELOG comment block** at the top of
+  `rarbg-enhancer.user.js` was stale (still labeled "Merged build
+  6.2.0"). Truncated to a one-liner pointer to `CHANGELOG.md` so the
+  per-version history has a single source of truth.
+
+### Added
+- `@contributor Cisco` line in the userscript header — README's Credits
+  block already credited Cisco for the original "add magnet link" idea,
+  but the header didn't. Now consistent across both.
+- `docs/PUBLISH-AUDIT.md` — pre-publication audit captured ahead of
+  this release, useful as a checklist for future polish passes.
+
+### Fixed
+- `docs/INSTALL.md` no longer points at issue [#34](https://github.com/tyhallcsu/rarbg-enhancer/issues/34)
+  as "tracked for a redesign" — the legacy GM_config redesign actually
+  shipped in v6.2.6 (closed via [#46](https://github.com/tyhallcsu/rarbg-enhancer/pull/46)).
+
 ## [6.2.7] — 2026-05-01
 
 ### Fixed
@@ -256,7 +290,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Last release of the upstream "RARBG Enhancer Fork 6.0.1 (WORKS)" before this
 repository began. See the userscript header for prior history.
 
-[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.7...HEAD
+[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.8...HEAD
+[6.2.8]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.7...v6.2.8
 [6.2.7]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.6...v6.2.7
 [6.2.6]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.5...v6.2.6
 [6.2.5]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.4...v6.2.5
