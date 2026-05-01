@@ -35,7 +35,7 @@ Click the install link:
 
 Your manager will detect the userscript and show its install screen, listing the metadata, `@require`d libraries, and `@grant`s. Review and click **Install**.
 
-> **Auto-update note (private repo):** the userscript's `@updateURL` and `@downloadURL` point at `https://github.com/tyhallcsu/rarbg-enhancer/raw/main/rarbg-enhancer.user.js`. While the repo is private, your userscript manager cannot fetch this URL anonymously and will not auto-update — you'll need to re-install via the link above when a new version ships, or paste a personal access token into the URL. Once the repo is made public, auto-updates work transparently.
+> **Auto-update**: the userscript's `@updateURL` and `@downloadURL` point at `https://github.com/tyhallcsu/rarbg-enhancer/raw/main/rarbg-enhancer.user.js`. Tampermonkey checks for updates on its check interval (default: once a day) and applies them silently. To force a check now: **Dashboard → Installed Userscripts → Check for Updates**.
 
 ### From a downloaded copy
 

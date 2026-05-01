@@ -78,7 +78,7 @@ A userscript manager. Pick one:
 
 Your userscript manager will detect the file and prompt to install. Review the metadata block + `@require`d libraries and click **Install**.
 
-> **Auto-update note (private repos):** the `@updateURL` / `@downloadURL` headers point at the canonical raw URL. While this repo is private, your userscript manager won't be able to fetch updates automatically — re-install via the link above when a new version ships, or use a personal access token in the URL. Once the repo goes public, auto-updates will work transparently.
+> **Auto-update**: the `@updateURL` / `@downloadURL` headers point at this repo's `main` branch raw URL. Tampermonkey will check for updates on its check interval (default: once a day) and apply them silently.
 
 ### Manual install
 
