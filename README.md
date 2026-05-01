@@ -3,7 +3,7 @@
 Tampermonkey userscript for RARBG mirrors — seeder-based row highlighting, filtering, and a floating settings modal.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-6.2.4-green.svg)](rarbg-enhancer.user.js)
+[![Version](https://img.shields.io/badge/version-6.2.5-green.svg)](rarbg-enhancer.user.js)
 [![Install](https://img.shields.io/badge/install-userscript-orange.svg)](https://github.com/tyhallcsu/rarbg-enhancer/raw/main/rarbg-enhancer.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-supported-success.svg)](https://www.tampermonkey.net/)
 [![Violentmonkey](https://img.shields.io/badge/Violentmonkey-supported-success.svg)](https://violentmonkey.github.io/)
