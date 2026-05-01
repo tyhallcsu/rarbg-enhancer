@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.4] — 2026-05-01
+
+### Fixed
+- **Floating ⚙ FAB still didn't fire on real user clicks in v6.2.3** (#42).
+  The v6.2.3 fix moved the click handler from a per-element listener to a
+  delegated listener on the shadow root — which fixed nothing. Empirical
+  finding: under `@grant unsafeWindow`, click events on shadow-root
+  descendants don't trigger listeners that the userscript's sandbox
+  attached to the shadow root, even for trusted clicks. The Mousetrap
+  `Ctrl+/` binding kept working because it lives on `document`.
+
+  Fix: moved click + input + change listeners off the shadow root and onto
+  `document`, using `event.composedPath()` to detect events that crossed
+  our shadow boundary. The walk stops at the host element so we never
+  match clicks outside our widget.
+
+  Verified end-to-end on `rargb.to/tv/`:
+  - Real user FAB click toggles the modal
+  - All toggle switches inside the modal apply live
+  - All buttons (Full settings… / Reset / ×) work
+  - Ctrl+/ still toggles, Esc still closes
+
+### Notes
+- This is the third attempt at this bug (v6.2.2 wrong → v6.2.3 wrong → v6.2.4 right).
+  The lesson is that shadow-DOM event delegation under `@grant unsafeWindow`
+  needs document-level listeners + composedPath, not shadow-root-level
+  listeners. Documented in `~/.claude/skills/playwright-tampermonkey/SKILL.md`.
+
 ## [6.2.3] — 2026-04-30
 
 ### Fixed
@@ -141,7 +169,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Last release of the upstream "RARBG Enhancer Fork 6.0.1 (WORKS)" before this
 repository began. See the userscript header for prior history.
 
-[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.3...HEAD
+[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.4...HEAD
+[6.2.4]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.3...v6.2.4
 [6.2.3]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.2...v6.2.3
 [6.2.2]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.1...v6.2.2
 [6.2.1]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.0...v6.2.1
