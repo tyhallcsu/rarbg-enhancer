@@ -47,7 +47,7 @@ The legacy enhancer settings panel (opened via `Ctrl+/` or the **⚙ Script Sett
 
 ![Legacy GM_config options panel](screenshots/rarbg-options-page.png)
 
-> The new floating Shadow-DOM modal in the bottom-right is the recommended way to drive the highlighter; the legacy panel covers everything else and is tracked for a redesign in [#34](https://github.com/tyhallcsu/rarbg-enhancer/issues/34).
+> The new floating Shadow-DOM modal in the bottom-right is the recommended way to drive the highlighter. The legacy panel covers everything else and was given a matching dark redesign in v6.2.6.
 
 ## 3. Verify it's running
 
