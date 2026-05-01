@@ -22,7 +22,7 @@
 </div>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-6.2.7-green.svg)](rarbg-enhancer.user.js)
+[![Version](https://img.shields.io/badge/version-6.2.8-green.svg)](rarbg-enhancer.user.js)
 [![Install](https://img.shields.io/badge/install-userscript-orange.svg)](https://github.com/tyhallcsu/rarbg-enhancer/raw/main/rarbg-enhancer.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-supported-success.svg)](https://www.tampermonkey.net/)
 [![Violentmonkey](https://img.shields.io/badge/Violentmonkey-supported-success.svg)](https://violentmonkey.github.io/)
@@ -35,7 +35,7 @@ Tampermonkey userscript for RARBG mirrors — seeder-based row highlighting, fil
 > by Faris Hijazi and [RARBG Torrents – Dynamic Column Highlighting v5](https://greasyfork.org/scripts/493324)
 > by sharmanhall, with a Shadow-DOM floating settings modal added on top.
 
-![RARBG Enhancer in action](docs/screenshots/Screenshot_Rarbg_general.png)
+![Floating Shadow-DOM settings modal open on a live RARBG mirror — header reads "RARBG Enhancer V6.2.8" with live counter pills "200 rows / 12 highlighted / 188 hidden", followed by Seeder Highlighting controls (enable, threshold 100, color, hide-below) and Enhancer Shortcuts (large thumbnails, infinite scrolling, hide recommended, hover sound), with Full settings… and Reset buttons in the footer.](docs/screenshots/floating-settings-modal-hero.png)
 
 ## Features
 
@@ -43,7 +43,17 @@ Tampermonkey userscript for RARBG mirrors — seeder-based row highlighting, fil
 - **Dynamic seeder-column detection + threshold-based row coloring** — finds the seeder column by scanning for `.lista2t a[href*="seeders"]`, so it survives column reordering across mirrors. Defaults: highlight at `≥100` seeders, color `#c0edc8`. Both configurable.
 - **Hide rows below threshold** — optional filter to declutter low-seeder rows. Composes cleanly with the enhancer's existing row-hiding logic.
 - **`MutationObserver`-driven** — re-highlights on every row mutation (including infinite-scroll-appended rows) instead of polling every second.
-- **Shadow-DOM floating settings modal** — bottom-right ⚙ button opens an isolated panel that RARBG's aggressive page CSS cannot leak into. Live controls; closes on `Esc`, click-outside, or × button.
+
+### Floating settings modal
+
+The headline UX of this fork (see hero image above). Click the bottom-right green **⚙** button on any RARBG mirror page and a card-style settings panel opens.
+
+- **Live counter pills** — `200 rows · 12 highlighted · 188 hidden` updates on every highlight pass, so the threshold's effect is visible without scrolling the table.
+- **Settings apply live** — toggles in the **Seeder Highlighting** section (enable, threshold, color, hide-below, auto-scroll-when-filtered-short) take effect immediately. No reload. Persists via `GM_setValue` under the `rbhl_*` namespace.
+- **Enhancer shortcuts** — the four most-toggled legacy options (large thumbnails, infinite scrolling, hide recommended, hover sound) are surfaced in the same panel. Marked "(reload required)" — they read from `GM_config` storage which the enhancer reads at boot.
+- **Keyboard** — `Esc` closes, `Ctrl`+`/` toggles. Click the dark scrim or the × in the header to dismiss.
+- **Shadow-DOM isolated** — the panel attaches an open shadow root so RARBG's aggressive page CSS (and any user-installed Stylus rules) can't leak in or break the layout.
+- **Escape hatch** — `Full settings…` in the footer opens the legacy `GM_config` panel for everything not surfaced in the modal (mirrors list, image search engine, category blocks, etc.).
 
 ### Auto-solve threat-defence CAPTCHA
 ![Automatic CAPTCHA solver](docs/screenshots/Screenshot_auto-captcha.gif)
@@ -91,7 +101,7 @@ A userscript manager. Pick one:
 
 Your userscript manager will detect the file and prompt to install. Review the metadata block + `@require`d libraries and click **Install**.
 
-> **Auto-update note (private repos):** the `@updateURL` / `@downloadURL` headers point at the canonical raw URL. While this repo is private, your userscript manager won't be able to fetch updates automatically — re-install via the link above when a new version ships, or use a personal access token in the URL. Once the repo goes public, auto-updates will work transparently.
+> **Auto-update**: the `@updateURL` / `@downloadURL` headers point at this repo's `main` branch raw URL. Tampermonkey will check for updates on its check interval (default: once a day) and apply them silently.
 
 ### Manual install
 
