@@ -10,6 +10,7 @@ var meta = {
 // @contributor  Faris Hijazi (original author)
 // @contributor  darkred (some code from https://greasyfork.org/en/users/2160-darkred)
 // @contributor  sharmanhall (v5 Dynamic Column Highlighting logic — https://greasyfork.org/scripts/493324)
+// @contributor  Cisco (original "add magnet link" idea — https://greasyfork.org/en/users/16455-cisco)
 // @homepageURL  https://github.com/tyhallcsu/rarbg-enhancer
 // @supportURL   https://github.com/tyhallcsu/rarbg-enhancer/issues
 // @grant        unsafeWindow
