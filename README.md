@@ -12,7 +12,7 @@ Tampermonkey userscript for RARBG mirrors — seeder-based row highlighting, fil
 > by Faris Hijazi and [RARBG Torrents – Dynamic Column Highlighting v5](https://greasyfork.org/scripts/493324)
 > by sharmanhall, with a Shadow-DOM floating settings modal added on top.
 
-![RARBG Enhancer in action](docs/screenshots/Screenshot_Rarbg_general.png)
+![Floating Shadow-DOM settings modal open on a live RARBG mirror — header reads "RARBG Enhancer V6.2.8" with live counter pills "200 rows / 12 highlighted / 188 hidden", followed by Seeder Highlighting controls (enable, threshold 100, color, hide-below) and Enhancer Shortcuts (large thumbnails, infinite scrolling, hide recommended, hover sound), with Full settings… and Reset buttons in the footer.](docs/screenshots/floating-settings-modal-hero.png)
 
 ## Features
 
