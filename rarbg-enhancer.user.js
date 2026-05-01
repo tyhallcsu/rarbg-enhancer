@@ -2,9 +2,9 @@
 var meta = {
     rawmdb: function () {
 // ==UserScript==
-// @name         RARBG Enhancer + Highlighter (Merged) 6.2.6
+// @name         RARBG Enhancer + Highlighter (Merged) 6.2.7
 // @namespace    https://github.com/tyhallcsu/rarbg-enhancer
-// @version      6.2.6
+// @version      6.2.7
 // @description  Fork of RARBG Enhancer 6 merged with the v5 Dynamic Column Highlighting script. Auto-solve CAPTCHA, infinite scroll, magnet shortcuts, thumbnails, image search links, plus seeder-based row highlighting, hide-below-threshold, and a floating modal settings panel.
 // @author       tyhallcsu
 // @contributor  Faris Hijazi (original author)
@@ -609,13 +609,66 @@ const debug = false; // debugmode (setting this to false will disable the consol
             },
         },
         events: {
-            open: function (doc) {},
+            // (#46 follow-up) Inject a discoverable × close button into the
+            // legacy panel header. The native "Close" button is preserved at
+            // the bottom for keyboard / muscle memory; this just makes the
+            // close action discoverable from the top.
+            open: function (doc) {
+                try {
+                    if (!doc || doc.getElementById("rbhl-legacy-close")) return;
+                    var header = doc.getElementById("GM_config_header") || doc.querySelector(".config_header");
+                    if (!header) return;
+                    var x = doc.createElement("button");
+                    x.id = "rbhl-legacy-close";
+                    x.type = "button";
+                    x.title = "Close (Esc)";
+                    x.setAttribute("aria-label", "Close settings");
+                    x.textContent = "×";
+                    x.style.cssText = [
+                        "position:absolute", "top:10px", "right:14px",
+                        "width:32px", "height:32px",
+                        "background:transparent", "border:0",
+                        "color:#888", "font-size:24px", "line-height:1",
+                        "cursor:pointer", "border-radius:8px",
+                        "display:flex", "align-items:center", "justify-content:center",
+                        "padding:0",
+                        "transition:background 0.15s ease, color 0.15s ease",
+                    ].join(";") + ";";
+                    x.addEventListener("mouseenter", function () {
+                        x.style.background = "rgba(255,255,255,0.08)";
+                        x.style.color = "#fff";
+                    });
+                    x.addEventListener("mouseleave", function () {
+                        x.style.background = "transparent";
+                        x.style.color = "#888";
+                    });
+                    x.addEventListener("click", function () {
+                        try { GM_config.close(); } catch (e) {}
+                    });
+                    // Position the header relatively so the absolute × anchors to it.
+                    var hStyle = doc.defaultView.getComputedStyle(header);
+                    if (hStyle.position === "static") header.style.position = "relative";
+                    header.appendChild(x);
+                } catch (e) {}
+            },
             save: function (values) {
                 // All the values that aren't saved are passed to this function
                 // for (i in values) alert(values[i]);
                 location.reload();
             },
         },
+    });
+
+    // (#46 follow-up) Esc closes the legacy GM_config panel when it's open.
+    // The Esc handler for the floating modal lives inside RBSettingsPanel's
+    // bootstrap; this one is parallel for the legacy iframe.
+    document.addEventListener("keydown", function (e) {
+        if (e.key !== "Escape") return;
+        var ifr = document.getElementById("GM_config");
+        if (ifr && ifr.style && ifr.style.display !== "none" && ifr.offsetParent !== null) {
+            e.preventDefault();
+            try { GM_config.close(); } catch (err) {}
+        }
     });
 
     // override fetching description images
@@ -731,14 +784,23 @@ a.extra-tb {
 
 /* Outer iframe element for the legacy GM_config panel — restyle the
    chrome that GM_config sets via inline JS. (Inner contents styled via
-   GM_config.init({ css }) above.) */
+   GM_config.init({ css }) above.)
+   v6.2.7: cap height + center the iframe so it actually fits in the
+   viewport. GM_config sets height: 75% inline; we override with a
+   smaller cap and center via translate. */
 iframe#GM_config {
     border: 0 !important;
     border-radius: 14px !important;
     box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7),
                 0 0 0 1px rgba(255, 255, 255, 0.04) !important;
     background: #1a1a1a !important;
-    overflow: hidden !important;
+    overflow: auto !important;
+    max-height: min(85vh, 720px) !important;
+    max-width: min(90vw, 640px) !important;
+    width: 90vw !important;
+    height: 85vh !important;
+    inset: 50% auto auto 50% !important;
+    transform: translate(-50%, -50%) !important;
 }
 `
     );
@@ -2864,8 +2926,13 @@ iframe#GM_config {
                 ".row { display:flex; align-items:center; justify-content:space-between;",
                 "  gap:10px; padding:9px 0; border-bottom:1px solid #232323; }",
                 ".row:last-child { border-bottom:0; }",
-                ".row label { flex:1 1 auto; cursor:pointer; color:#ddd; user-select:none; }",
-                ".row label .sub { display:block; font-size:11px; color:#888; margin-top:2px; }",
+                // Target ONLY the outer text label (direct child of .row that
+                // is NOT the .switch wrapper). Without :not(.switch), the
+                // generic selector also matched the <label class='switch'>
+                // we use to wrap toggle inputs and stretched it to fill the
+                // row — bug shipped in v6.2.7.
+                ".row > label:not(.switch) { flex:1 1 auto; cursor:pointer; color:#ddd; user-select:none; }",
+                ".row > label:not(.switch) .sub { display:block; font-size:11px; color:#888; margin-top:2px; }",
                 // Inputs
                 "input[type=number] { width:84px; background:#111; color:#fff;",
                 "  border:1px solid #333; border-radius:6px; padding:6px 8px; font:inherit;",
@@ -2929,7 +2996,7 @@ iframe#GM_config {
                 '<div class="overlay" data-action="close"></div>',
                 '<div class="panel" role="dialog" aria-modal="true" aria-labelledby="rbhl-title">',
                 '  <div class="header">',
-                '    <h2 id="rbhl-title">RARBG Enhancer<span class="badge">v6.2.6</span></h2>',
+                '    <h2 id="rbhl-title">RARBG Enhancer<span class="badge">v6.2.7</span></h2>',
                 '    <button class="close-btn" type="button" data-action="close" title="Close (Esc)" aria-label="Close settings">×</button>',
                 '  </div>',
                 '  <div class="body">',
@@ -3041,8 +3108,8 @@ iframe#GM_config {
             //   - v6.2.2 bound a click listener directly to fab.
             //   - v6.2.3 moved to a single delegated click listener on `root`
             //     (the shadow root).
-            //   - v6.2.6 moved to `document` with composedPath().
-            //   - v6.2.6 (this version) injects a <script> tag whose contents
+            //   - v6.2.7 moved to `document` with composedPath().
+            //   - v6.2.7 (this version) injects a <script> tag whose contents
             //     run in PAGE WORLD, registering the listeners there.
             //
             // Why page-world: with @grant unsafeWindow, the userscript runs
