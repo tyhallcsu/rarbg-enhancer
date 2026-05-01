@@ -6,16 +6,14 @@
   <p><strong>A userscript fork that adds CAPTCHA handling, infinite scroll, thumbnails, mirror switching, magnet shortcuts, and UI controls for RARBG-style mirror pages.</strong></p>
 
   <p>
-    <a href="./LICENSE"><img src="https://img.shields.io/github/license/tyhallcsu/Rarbg-Enhancer-UserScript" alt="License"></a>
+    <a href="./LICENSE"><img src="https://img.shields.io/github/license/tyhallcsu/rarbg-enhancer" alt="License"></a>
     <img src="https://img.shields.io/badge/type-userscript-31b37d" alt="Type: userscript">
-    <img src="https://img.shields.io/badge/version-6.0.1-5965f2" alt="Version 6.2.7">
-    
+    <img src="https://img.shields.io/badge/version-6.2.8-5965f2" alt="Version 6.2.8">
   </p>
 
   <p>
     <a href="#install">Install</a> &middot;
     <a href="#features">Features</a> &middot;
-    <a href="#screenshots">Screenshots</a> &middot;
     <a href="#keyboard-shortcuts">Keyboard shortcuts</a> &middot;
     <a href="#license">License</a>
   </p>
