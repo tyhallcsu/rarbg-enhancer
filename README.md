@@ -1,12 +1,35 @@
-# RARBG Enhancer
+<div align="center">
+  <img src="./assets/readme-icon.svg" alt="RARBG Enhancer UserScript icon" width="142">
 
-Tampermonkey userscript for RARBG mirrors — seeder-based row highlighting, filtering, and a floating settings modal.
+  <h1>RARBG Enhancer</h1>
+
+  <p><strong>A userscript fork that adds CAPTCHA handling, infinite scroll, thumbnails, mirror switching, magnet shortcuts, and UI controls for RARBG-style mirror pages.</strong></p>
+
+  <p>
+    <a href="./LICENSE"><img src="https://img.shields.io/github/license/tyhallcsu/Rarbg-Enhancer-UserScript" alt="License"></a>
+    <img src="https://img.shields.io/badge/type-userscript-31b37d" alt="Type: userscript">
+    <img src="https://img.shields.io/badge/version-6.0.1-5965f2" alt="Version 6.2.7">
+    
+  </p>
+
+  <p>
+    <a href="#install">Install</a> &middot;
+    <a href="#features">Features</a> &middot;
+    <a href="#screenshots">Screenshots</a> &middot;
+    <a href="#keyboard-shortcuts">Keyboard shortcuts</a> &middot;
+    <a href="#license">License</a>
+  </p>
+</div>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-6.2.7-green.svg)](rarbg-enhancer.user.js)
 [![Install](https://img.shields.io/badge/install-userscript-orange.svg)](https://github.com/tyhallcsu/rarbg-enhancer/raw/main/rarbg-enhancer.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-supported-success.svg)](https://www.tampermonkey.net/)
 [![Violentmonkey](https://img.shields.io/badge/Violentmonkey-supported-success.svg)](https://violentmonkey.github.io/)
+
+
+Tampermonkey userscript for RARBG mirrors — seeder-based row highlighting, filtering, and a floating settings modal.
+
 
 > A merged fork of [RARBG Enhancer 6](https://github.com/FarisHijazi/Rarbg-Enhancer-UserScript)
 > by Faris Hijazi and [RARBG Torrents – Dynamic Column Highlighting v5](https://greasyfork.org/scripts/493324)
