@@ -78,59 +78,10 @@ var meta = {
     }
 };
 
-/* =============================================================================
- * CHANGELOG — Merged build 6.2.0 (2026-04-30)
- * -----------------------------------------------------------------------------
- * vs. RARBG Enhancer Fork 6.0.1 (base):
- *   + Bumped @name / @version to "RARBG Enhancer + Highlighter (Merged) 6.2.0".
- *   + Added @contributor for sharmanhall (v5 highlight logic).
- *   + Added new module `RBHighlighter` (search for "RBHighlighter:" below) that
- *     ports v5 seeder-column detection + row coloring, with these changes:
- *       * Replaced v5's setInterval(1000ms) with a MutationObserver on the
- *         results table (.lista2t tbody). Falls back to a slower interval
- *         (3000ms) only if no tbody exists at attach time.
- *       * Threshold + color are configurable; defaults preserved (>=100, #c0edc8).
- *       * Highlight runs once on initial load and on every row mutation, so it
- *         catches infinite-scroll-appended rows automatically.
- *       * Background is applied as a CSS rule keyed off `data-rb-hl="1"`, NOT
- *         inline `row.style.background`. This avoids stomping any inline style
- *         the enhancer might want to set on a row later.
- *   + Added new feature: hide rows below seeder threshold (data-rb-below="1"
- *     + display:none CSS rule). Restores via attribute removal, so it never
- *     clobbers an inline display:none that another enhancer feature set
- *     (hideEmptyTorrentLinks, search filter, etc.) — those still take effect
- *     because both rules resolve to display:none.
- *   + Added new floating modal settings panel (Shadow DOM) with toggles for
- *     threshold / color / hide-below / master enable, plus shortcut buttons
- *     to open the legacy GM_config panel and toggle existing enhancer options
- *     (large thumbnails, infinite scroll, hide recommended). Settings persist
- *     via GM_setValue/GM_getValue under the "rbhl_*" key prefix and apply live.
- *   + Floating panel uses Shadow DOM, so RARBG's aggressive page CSS cannot
- *     leak into it. Closes on ESC, click-outside, and explicit × button.
- *
- * vs. RARBG Torrents - Dynamic Column Highlighting v5 (folded in):
- *   + Same column-detection algorithm (.lista2t a[href*="seeders"]) — kept.
- *   + setInterval polling -> MutationObserver (per task brief).
- *   + Threshold + color now configurable (was hardcoded >=100 / #c0edc8).
- *   + Verbose console.log calls dropped (kept one debug line behind a flag).
- *
- * Notes on conflicts I had to resolve:
- *   - The base enhancer uses GM_config (sizzlemctwizzle) for its settings,
- *     which has its own storage. I did NOT extend GM_config's `fields` block,
- *     because (a) the brief asks for a Shadow-DOM modal that lives outside
- *     GM_config's iframe-y UI, and (b) GM_config save() triggers
- *     `location.reload()`, which contradicts the "settings apply live"
- *     requirement. Instead, the new highlighter uses a separate GM_setValue
- *     namespace ("rbhl_*"). The floating panel exposes shortcuts to a few
- *     enhancer toggles (largeThumbnails, infiniteScrolling, hideRecommended)
- *     by reading/writing GM_config directly, but does not duplicate them.
- *   - Both scripts manipulate `tr.lista2`. The enhancer sets inline
- *     `row.style.display = "none"` for hideEmptyTorrentLinks and the search
- *     filter. The new "hide below threshold" feature uses a `data-rb-below`
- *     attribute + CSS rule instead of inline display, so the two systems
- *     compose: a row hidden by either is hidden; toggling one off doesn't
- *     resurrect a row the other still wants hidden.
- * ============================================================================= */
+/* Per-version history lives in CHANGELOG.md (Keep-a-Changelog format).
+ * This file is the single deliverable; CHANGELOG.md is the source of truth
+ * for what changed when. The original "Merged build 6.2.0" notes that used
+ * to live here are preserved in the v6.2.0 entry of CHANGELOG.md. */
 
 if (meta.rawmdb && meta.rawmdb.toString && (meta.rawmdb = meta.rawmdb.toString())) {
     var kv,
