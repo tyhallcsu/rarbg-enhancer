@@ -2,9 +2,9 @@
 var meta = {
     rawmdb: function () {
 // ==UserScript==
-// @name         RARBG Enhancer + Highlighter (Merged) 6.2.5
+// @name         RARBG Enhancer + Highlighter (Merged) 6.2.6
 // @namespace    https://github.com/tyhallcsu/rarbg-enhancer
-// @version      6.2.5
+// @version      6.2.6
 // @description  Fork of RARBG Enhancer 6 merged with the v5 Dynamic Column Highlighting script. Auto-solve CAPTCHA, infinite scroll, magnet shortcuts, thumbnails, image search links, plus seeder-based row highlighting, hide-below-threshold, and a floating modal settings panel.
 // @author       tyhallcsu
 // @contributor  Faris Hijazi (original author)
@@ -277,123 +277,186 @@ const debug = false; // debugmode (setting this to false will disable the consol
         '<div><div><a href="https://github.com/FarisHijazi/Rarbg-Enhancer-UserScript">Rarbg-Enhancer-UserScript Settings</a><pre style=" font-size: medium; ">You can get to this options page by pressing "ctrl+/" or by navigating to the menu as shown bellow</pre></div><img src="https://github.com/FarisHijazi/Rarbg-Enhancer-UserScript/raw/master/screenshots/rarbg-options.png"></div>'
     );
 
-    // Restyles the legacy GM_config panel — the bare-HTML look from upstream
-    // was logged as #34. This stylesheet lands inside GM_config's frame via
-    // its `css` option and targets the actual generated DOM (config_header,
-    // section_header, section_desc, config_var, field_label, saveclose_buttons,
-    // reset_holder.reset, etc.). Honors prefers-color-scheme. NOTE: keep
-    // selectors prefixed with `#GM_config` so we never leak into the page.
+    // Restyles the legacy GM_config panel to match the floating Shadow-DOM
+    // modal's look (#34 + #45). Always dark theme — matches the modal.
+    // Native checkboxes get a custom toggle-switch appearance via
+    // `appearance: none`. The CSS below lands INSIDE GM_config's iframe.
+    // The iframe ELEMENT itself is restyled separately via addCss() in the
+    // outer document — see "GM_config iframe element restyle" lower down.
     const GM_CONFIG_CSS = [
-        "/* ===== rarbg-enhancer: GM_config panel restyle (closes #34) ===== */",
+        "/* ===== legacy GM_config panel — dark redesign matching the modal ===== */",
+        "html, body, #GM_config {",
+        "  background: #1a1a1a !important; color: #e8e8e8 !important;",
+        "  margin: 0 !important;",
+        "}",
         "#GM_config {",
-        "  background: #ffffff !important; color: #1a1a1a;",
         "  font: 13px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;",
-        "  padding: 16px 20px 12px; box-sizing: border-box;",
+        "  padding: 18px 22px 14px !important;",
         "}",
-        "#GM_config * { box-sizing: border-box; }",
+        "#GM_config, #GM_config * { box-sizing: border-box; }",
+        "::-webkit-scrollbar { width: 8px; height: 8px; }",
+        "::-webkit-scrollbar-track { background: transparent; }",
+        "::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }",
+        "::-webkit-scrollbar-thumb:hover { background: #444; }",
+        // Header (title + screenshot)
         "#GM_config .config_header {",
-        "  font-size: 18px !important; font-weight: 600; color: #2e7d32;",
-        "  text-align: center; margin: 0 0 12px; padding: 8px 0 12px;",
-        "  border-bottom: 1px solid #e0e0e0;",
+        "  font-size: 17px !important; font-weight: 600;",
+        "  color: #fff !important; text-align: center;",
+        "  margin: 0 0 14px !important; padding: 6px 0 14px !important;",
+        "  border-bottom: 1px solid #2a2a2a !important;",
         "}",
-        "#GM_config .config_header a { color: #2e7d32; text-decoration: none; font-weight: 600; }",
-        "#GM_config .config_header a:hover { text-decoration: underline; }",
-        "#GM_config .config_header img { max-width: 100%; border-radius: 6px; margin-top: 8px; }",
+        "#GM_config .config_header a {",
+        "  color: #66bb6a !important; text-decoration: none !important;",
+        "  font-weight: 600;",
+        "}",
+        "#GM_config .config_header a:hover { text-decoration: underline !important; }",
+        "#GM_config .config_header img {",
+        "  max-width: 100%; border-radius: 8px; margin-top: 10px;",
+        "  box-shadow: 0 4px 12px rgba(0,0,0,0.4);",
+        "}",
         "#GM_config .config_header pre {",
-        "  background: #f5f5f5; padding: 8px 10px; border-radius: 4px;",
-        "  font: 12px/1.4 ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace !important;",
-        "  text-align: left; color: #444; white-space: pre-wrap;",
+        "  background: #2a2a2a !important; color: #ccc !important;",
+        "  padding: 10px 12px !important; border-radius: 6px;",
+        "  font: 12px/1.45 ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace !important;",
+        "  text-align: left !important; white-space: pre-wrap;",
+        "  border: 1px solid #333;",
         "}",
-        "#GM_config .section_header_holder { margin: 16px 0 0; }",
+        // Section headers (matches the modal's section-title styling)
+        "#GM_config .section_header_holder { margin: 16px 0 4px !important; }",
         "#GM_config .section_header {",
-        "  background: #2e7d32 !important; color: #ffffff !important;",
-        "  font-size: 14px !important; font-weight: 600; padding: 8px 12px !important;",
-        "  margin: 0 !important; border-radius: 6px 6px 0 0; text-align: left !important;",
-        "  border: 0 !important;",
+        "  background: linear-gradient(180deg, #222, #1a1a1a) !important;",
+        "  color: #9ec5d4 !important; font-size: 11px !important;",
+        "  font-weight: 600 !important; text-transform: uppercase;",
+        "  letter-spacing: 0.08em;",
+        "  padding: 12px 14px !important; margin: 0 !important;",
+        "  border: 1px solid #2a2a2a !important; border-bottom: 0 !important;",
+        "  border-radius: 8px 8px 0 0 !important; text-align: left !important;",
         "}",
         "#GM_config .section_desc {",
-        "  background: #f5f5f5 !important; color: #555 !important;",
-        "  font-size: 12px !important; padding: 8px 12px !important; margin: 0 0 8px !important;",
-        "  border-radius: 0 0 6px 6px; border-left: 3px solid #2e7d32; text-align: left !important;",
+        "  background: #161616 !important; color: #888 !important;",
+        "  font-size: 12px !important; padding: 8px 14px !important;",
+        "  margin: 0 0 6px !important; border: 1px solid #2a2a2a !important;",
+        "  border-top: 0 !important; border-radius: 0 0 8px 8px !important;",
+        "  border-left: 3px solid #2e7d32 !important; text-align: left !important;",
         "}",
+        // Field rows
         "#GM_config .config_var {",
-        "  display: flex !important; align-items: center; gap: 12px;",
-        "  padding: 8px 4px !important; margin: 0 !important;",
-        "  border-bottom: 1px solid #eee;",
+        "  display: flex !important; align-items: center;",
+        "  gap: 14px !important; padding: 10px 4px !important; margin: 0 !important;",
+        "  border-bottom: 1px solid #232323 !important;",
         "}",
-        "#GM_config .config_var:hover { background: #fafafa; }",
+        "#GM_config .config_var:hover { background: rgba(255,255,255,0.02); }",
         "#GM_config .config_var .field_label {",
-        "  flex: 0 0 220px; font-weight: 500; color: #333; cursor: pointer;",
-        "  font-size: 13px !important; margin: 0 !important;",
+        "  flex: 0 0 220px !important; font-weight: 500 !important;",
+        "  color: #ddd !important; cursor: pointer; font-size: 13px !important;",
+        "  margin: 0 !important;",
         "}",
         "#GM_config .radio_label, #GM_config label {",
-        "  display: inline-flex; align-items: center; gap: 4px;",
-        "  margin: 0 12px 0 0 !important; cursor: pointer; font-size: 13px;",
+        "  display: inline-flex !important; align-items: center; gap: 6px;",
+        "  margin: 0 14px 0 0 !important; cursor: pointer !important;",
+        "  font-size: 13px !important; color: #ddd !important;",
         "}",
-        "#GM_config input[type='checkbox'], #GM_config input[type='radio'] {",
-        "  width: 16px; height: 16px; accent-color: #2e7d32;",
-        "  cursor: pointer; margin: 0 4px 0 0 !important;",
+        // Custom toggle switches via styled native checkboxes
+        "#GM_config input[type='checkbox'] {",
+        "  appearance: none !important; -webkit-appearance: none !important;",
+        "  width: 38px !important; height: 22px !important;",
+        "  background: #3a3a3a !important; border: 0 !important;",
+        "  border-radius: 22px !important; position: relative !important;",
+        "  cursor: pointer !important; margin: 0 4px 0 0 !important;",
+        "  transition: background 0.18s ease;",
+        "  flex-shrink: 0; vertical-align: middle;",
         "}",
+        "#GM_config input[type='checkbox']:checked { background: #2e7d32 !important; }",
+        "#GM_config input[type='checkbox']::after {",
+        "  content: ''; position: absolute;",
+        "  top: 3px; left: 3px; width: 16px; height: 16px;",
+        "  background: #fff; border-radius: 50%;",
+        "  box-shadow: 0 1px 3px rgba(0,0,0,0.4);",
+        "  transition: transform 0.18s ease;",
+        "}",
+        "#GM_config input[type='checkbox']:checked::after { transform: translateX(16px); }",
+        // Custom radio buttons
+        "#GM_config input[type='radio'] {",
+        "  appearance: none !important; -webkit-appearance: none !important;",
+        "  width: 18px !important; height: 18px !important;",
+        "  border: 2px solid #444 !important; border-radius: 50% !important;",
+        "  background: transparent !important;",
+        "  cursor: pointer !important; position: relative;",
+        "  margin: 0 4px 0 0 !important; transition: border-color 0.15s ease;",
+        "  flex-shrink: 0; vertical-align: middle;",
+        "}",
+        "#GM_config input[type='radio']:checked { border-color: #66bb6a !important; }",
+        "#GM_config input[type='radio']::after {",
+        "  content: ''; position: absolute;",
+        "  top: 3px; left: 3px; width: 8px; height: 8px;",
+        "  background: #66bb6a; border-radius: 50%; opacity: 0;",
+        "  transition: opacity 0.15s ease;",
+        "}",
+        "#GM_config input[type='radio']:checked::after { opacity: 1; }",
+        // Text/number/color inputs
         "#GM_config input[type='text'], #GM_config input[type='number'], #GM_config input[type='color'] {",
-        "  padding: 6px 8px !important; border: 1px solid #ccc !important;",
-        "  border-radius: 4px; background: #fff; color: #1a1a1a;",
-        "  font: inherit; flex: 0 1 auto; max-width: 200px;",
+        "  padding: 7px 9px !important;",
+        "  border: 1px solid #333 !important; border-radius: 6px !important;",
+        "  background: #111 !important; color: #fff !important;",
+        "  font: inherit !important; flex: 0 1 auto !important;",
+        "  max-width: 220px;",
+        "  transition: border-color 0.15s ease, box-shadow 0.15s ease;",
         "}",
-        "#GM_config input[type='number'] { max-width: 100px; }",
-        "#GM_config input:focus, #GM_config textarea:focus {",
-        "  outline: none; border-color: #2e7d32 !important;",
-        "  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);",
+        "#GM_config input[type='number'] { max-width: 110px !important; text-align: right; }",
+        "#GM_config input[type='color'] { padding: 2px !important; height: 30px; width: 44px; }",
+        "#GM_config input:focus, #GM_config textarea:focus, #GM_config select:focus {",
+        "  outline: none !important; border-color: #66bb6a !important;",
+        "  box-shadow: 0 0 0 3px rgba(102, 187, 106, 0.2) !important;",
         "}",
+        // Textarea (mirrors)
         "#GM_config textarea {",
-        "  flex: 1; min-height: 10em !important;",
-        "  padding: 8px; border: 1px solid #ccc; border-radius: 4px;",
-        "  background: #fafafa; color: #1a1a1a;",
-        "  font: 12px/1.4 ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace !important;",
-        "  resize: vertical; width: auto;",
+        "  flex: 1 !important; min-height: 12em !important;",
+        "  padding: 10px !important; width: auto !important;",
+        "  border: 1px solid #333 !important; border-radius: 6px !important;",
+        "  background: #0e0e0e !important; color: #e8e8e8 !important;",
+        "  font: 12px/1.5 ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace !important;",
+        "  resize: vertical;",
         "}",
-        "#GM_config_buttons_holder, #GM_config .reset_holder {",
-        "  display: flex !important; gap: 8px; justify-content: flex-end;",
-        "  padding: 12px 0 0; margin: 12px 0 0; border-top: 1px solid #e0e0e0;",
-        "}",
-        "#GM_config .reset_holder { border-top: 0; margin-top: 6px; padding: 0; justify-content: flex-end; }",
-        "#GM_config .saveclose_buttons {",
-        "  background: #2e7d32 !important; color: #fff !important; border: 0 !important;",
-        "  padding: 8px 16px !important; border-radius: 5px;",
-        "  font: 500 13px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;",
-        "  cursor: pointer; transition: background 0.15s;",
-        "}",
-        "#GM_config .saveclose_buttons:hover { background: #388e3c !important; }",
-        "#GM_config .reset, #GM_config a.reset {",
-        "  background: #f5f5f5; color: #555 !important; border: 1px solid #ccc;",
-        "  padding: 7px 14px; border-radius: 5px; font: 13px/1 inherit;",
-        "  cursor: pointer; text-decoration: none; display: inline-block;",
-        "}",
-        "#GM_config .reset:hover, #GM_config a.reset:hover { background: #e8e8e8; }",
+        // Select
         "#GM_config select {",
-        "  padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px;",
-        "  background: #fff; color: #1a1a1a; font: inherit; cursor: pointer;",
+        "  padding: 7px 9px !important; border: 1px solid #333 !important;",
+        "  border-radius: 6px !important; background: #111 !important;",
+        "  color: #fff !important; font: inherit !important; cursor: pointer;",
         "}",
-        // Dark mode (honors OS preference)
-        "@media (prefers-color-scheme: dark) {",
-        "  #GM_config { background: #1f1f1f !important; color: #e0e0e0; }",
-        "  #GM_config .config_header { color: #66bb6a; border-bottom-color: #333; }",
-        "  #GM_config .config_header a { color: #66bb6a; }",
-        "  #GM_config .config_header pre { background: #2a2a2a; color: #ccc; }",
-        "  #GM_config .section_header { background: #2e7d32 !important; }",
-        "  #GM_config .section_desc { background: #2a2a2a !important; color: #aaa !important; }",
-        "  #GM_config .config_var { border-bottom-color: #2a2a2a; }",
-        "  #GM_config .config_var:hover { background: #252525; }",
-        "  #GM_config .config_var .field_label { color: #ddd; }",
-        "  #GM_config input[type='text'], #GM_config input[type='number'], #GM_config select {",
-        "    background: #111 !important; color: #e0e0e0 !important; border-color: #444 !important;",
-        "  }",
-        "  #GM_config textarea { background: #0e0e0e !important; color: #e0e0e0 !important; border-color: #444 !important; }",
-        "  #GM_config_buttons_holder { border-top-color: #333; }",
-        "  #GM_config .reset, #GM_config a.reset {",
-        "    background: #2a2a2a; color: #ccc !important; border-color: #444;",
-        "  }",
-        "  #GM_config .reset:hover, #GM_config a.reset:hover { background: #333; }",
+        // Buttons (Save / Close at bottom)
+        "#GM_config_buttons_holder {",
+        "  display: flex !important; gap: 10px; justify-content: flex-end;",
+        "  padding: 16px 0 4px !important; margin: 18px 0 0 !important;",
+        "  border-top: 1px solid #2a2a2a !important;",
         "}",
+        "#GM_config .saveclose_buttons {",
+        "  background: linear-gradient(135deg, #2e7d32, #388e3c) !important;",
+        "  color: #fff !important; border: 0 !important;",
+        "  padding: 9px 18px !important; border-radius: 7px !important;",
+        "  font: 500 13px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;",
+        "  cursor: pointer !important;",
+        "  transition: background 0.15s ease, transform 0.1s ease;",
+        "  box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);",
+        "}",
+        "#GM_config .saveclose_buttons:hover {",
+        "  background: linear-gradient(135deg, #388e3c, #43a047) !important;",
+        "}",
+        "#GM_config .saveclose_buttons:active { transform: translateY(1px); }",
+        // Reset link (top + bottom)
+        "#GM_config .reset_holder { margin: 6px 0 0 !important; padding: 0 !important; }",
+        "#GM_config .reset, #GM_config a.reset {",
+        "  background: #2a2a2a !important; color: #ccc !important;",
+        "  border: 1px solid #3a3a3a !important;",
+        "  padding: 8px 14px !important; border-radius: 6px !important;",
+        "  font: 13px/1 inherit !important; cursor: pointer !important;",
+        "  text-decoration: none !important; display: inline-block;",
+        "  transition: background 0.15s ease;",
+        "}",
+        "#GM_config .reset:hover, #GM_config a.reset:hover {",
+        "  background: #333 !important; color: #fff !important;",
+        "}",
+        // Tooltip-style title attributes (browser-native)
+        "#GM_config .field_label[title] { cursor: help; }",
     ].join("\n");
 
     GM_config.init({
@@ -665,6 +728,18 @@ a.extra-tb {
     flex-wrap: wrap;
     justify-content: space-between;
   }
+
+/* Outer iframe element for the legacy GM_config panel — restyle the
+   chrome that GM_config sets via inline JS. (Inner contents styled via
+   GM_config.init({ css }) above.) */
+iframe#GM_config {
+    border: 0 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7),
+                0 0 0 1px rgba(255, 255, 255, 0.04) !important;
+    background: #1a1a1a !important;
+    overflow: hidden !important;
+}
 `
     );
     updateCss();
@@ -2827,6 +2902,10 @@ a.extra-tb {
                 ".hint kbd { background:#2a2a2a; border:1px solid #3a3a3a; border-radius:4px;",
                 "  padding:1px 5px; font-size:10px; font-family:ui-monospace,Menlo,monospace;",
                 "  color:#ddd; }",
+                ".credits { color:#666; font-size:10px; margin-top:6px;",
+                "  text-align:center; letter-spacing:0.02em; }",
+                ".credits a { color:#9ec5d4; text-decoration:none; }",
+                ".credits a:hover { color:#66bb6a; text-decoration:underline; }",
                 ".counter { font-size:11px; color:#888; margin-bottom:6px;",
                 "  display:flex; gap:10px; flex-wrap:wrap; }",
                 ".counter .pill { background:#222; border:1px solid #2a2a2a;",
@@ -2850,7 +2929,7 @@ a.extra-tb {
                 '<div class="overlay" data-action="close"></div>',
                 '<div class="panel" role="dialog" aria-modal="true" aria-labelledby="rbhl-title">',
                 '  <div class="header">',
-                '    <h2 id="rbhl-title">RARBG Enhancer<span class="badge">v6.2.5</span></h2>',
+                '    <h2 id="rbhl-title">RARBG Enhancer<span class="badge">v6.2.6</span></h2>',
                 '    <button class="close-btn" type="button" data-action="close" title="Close (Esc)" aria-label="Close settings">×</button>',
                 '  </div>',
                 '  <div class="body">',
@@ -2861,24 +2940,24 @@ a.extra-tb {
                 '    </div>',
                 '    <div class="section-title">Seeder highlighting</div>',
                 '    <div class="row"><label for="rbhl-enabled">Enable highlighting</label>',
-                '      <span class="switch"><input type="checkbox" id="rbhl-enabled" data-key="enabled"><span class="slider"></span></span></div>',
+                '      <label class="switch"><input type="checkbox" id="rbhl-enabled" data-key="enabled"><span class="slider"></span></label></div>',
                 '    <div class="row"><label for="rbhl-threshold">Seeder threshold</label>',
                 '      <input type="number" id="rbhl-threshold" min="0" step="1" data-key="threshold"></div>',
                 '    <div class="row"><label for="rbhl-color">Highlight color</label>',
                 '      <input type="color" id="rbhl-color" data-key="color"></div>',
                 '    <div class="row"><label for="rbhl-hideBelow">Hide rows below threshold<span class="sub">remove low-seed rows from view</span></label>',
-                '      <span class="switch"><input type="checkbox" id="rbhl-hideBelow" data-key="hideBelow"><span class="slider"></span></span></div>',
+                '      <label class="switch"><input type="checkbox" id="rbhl-hideBelow" data-key="hideBelow"><span class="slider"></span></label></div>',
                 '    <div class="row"><label for="rbhl-autoScrollAssist">Auto-scroll when filtered short<span class="sub">force-load next page when content fits viewport</span></label>',
-                '      <span class="switch"><input type="checkbox" id="rbhl-autoScrollAssist" data-key="autoScrollAssist"><span class="slider"></span></span></div>',
+                '      <label class="switch"><input type="checkbox" id="rbhl-autoScrollAssist" data-key="autoScrollAssist"><span class="slider"></span></label></div>',
                 '    <div class="section-title">Enhancer shortcuts <span style="color:#666;font-weight:400;text-transform:none;letter-spacing:0">(reload required)</span></div>',
                 '    <div class="row"><label for="rbhl-largeThumbnails">Large thumbnails</label>',
-                '      <span class="switch"><input type="checkbox" id="rbhl-largeThumbnails" data-gmckey="largeThumbnails"><span class="slider"></span></span></div>',
+                '      <label class="switch"><input type="checkbox" id="rbhl-largeThumbnails" data-gmckey="largeThumbnails"><span class="slider"></span></label></div>',
                 '    <div class="row"><label for="rbhl-infiniteScrolling">Infinite scrolling</label>',
-                '      <span class="switch"><input type="checkbox" id="rbhl-infiniteScrolling" data-gmckey="infiniteScrolling"><span class="slider"></span></span></div>',
+                '      <label class="switch"><input type="checkbox" id="rbhl-infiniteScrolling" data-gmckey="infiniteScrolling"><span class="slider"></span></label></div>',
                 '    <div class="row"><label for="rbhl-hideRecommendedTorrents">Hide recommended torrents</label>',
-                '      <span class="switch"><input type="checkbox" id="rbhl-hideRecommendedTorrents" data-gmckey="hideRecommendedTorrents"><span class="slider"></span></span></div>',
+                '      <label class="switch"><input type="checkbox" id="rbhl-hideRecommendedTorrents" data-gmckey="hideRecommendedTorrents"><span class="slider"></span></label></div>',
                 '    <div class="row"><label for="rbhl-thumbnailHoverSound">Thumbnail hover sound</label>',
-                '      <span class="switch"><input type="checkbox" id="rbhl-thumbnailHoverSound" data-gmckey="thumbnailHoverSound"><span class="slider"></span></span></div>',
+                '      <label class="switch"><input type="checkbox" id="rbhl-thumbnailHoverSound" data-gmckey="thumbnailHoverSound"><span class="slider"></span></label></div>',
                 '  </div>',
                 '  <div class="footer">',
                 '    <div class="btnrow">',
@@ -2886,6 +2965,7 @@ a.extra-tb {
                 '      <button class="btn primary" type="button" data-action="reset" title="Reset highlight settings to defaults">Reset</button>',
                 '    </div>',
                 '    <div class="hint">Settings apply live. <kbd>Esc</kbd> or <kbd>Ctrl</kbd>+<kbd>/</kbd> to toggle.</div>',
+                '    <div class="credits">by <a href="https://github.com/tyhallcsu/rarbg-enhancer" target="_blank" rel="noopener noreferrer">sharmanhall</a> · <a href="https://github.com/tyhallcsu/rarbg-enhancer" target="_blank" rel="noopener noreferrer">github.com/tyhallcsu/rarbg-enhancer</a></div>',
                 '  </div>',
                 '</div>',
             ].join("\n");
@@ -2961,8 +3041,8 @@ a.extra-tb {
             //   - v6.2.2 bound a click listener directly to fab.
             //   - v6.2.3 moved to a single delegated click listener on `root`
             //     (the shadow root).
-            //   - v6.2.5 moved to `document` with composedPath().
-            //   - v6.2.5 (this version) injects a <script> tag whose contents
+            //   - v6.2.6 moved to `document` with composedPath().
+            //   - v6.2.6 (this version) injects a <script> tag whose contents
             //     run in PAGE WORLD, registering the listeners there.
             //
             // Why page-world: with @grant unsafeWindow, the userscript runs
