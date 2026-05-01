@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.7] — 2026-05-01
+
+### Fixed
+- **Modal toggle switches stretched full-width across their row** —
+  regression from v6.2.6's `<span class="switch">` → `<label class="switch">`
+  swap. The CSS rule `.row label { flex: 1 1 auto; … }` was generic
+  enough to match both the outer text label AND the new inner switch
+  label, so flex stretched the switch to fill the right column.
+  Fix: tightened the selector to `.row > label:not(.switch)`. Switches
+  now render at 38×22 again. Click-forwarding from the v6.2.6 fix is
+  preserved.
+- **Legacy `GM_config` panel had no Esc-to-close** — added a parent-
+  document keydown listener that calls `GM_config.close()` when Esc
+  fires AND the iframe is currently visible. Doesn't fire for normal
+  Esc presses elsewhere.
+- **Legacy panel had no discoverable × button** — added one to the panel
+  header via `GM_config.init({ events: { open(doc) {…} } })`. Styled to
+  match the modal's × (32×32, hover lightens). The native Close button
+  at the bottom is preserved.
+- **Legacy panel often overflowed the viewport** — capped iframe to
+  `min(85vh, 720px)` × `min(90vw, 640px)` and centered it via
+  `inset: 50% auto auto 50%; transform: translate(-50%, -50%)`. Content
+  scrolls inside the iframe rather than spilling.
+
 ## [6.2.6] — 2026-05-01
 
 ### Fixed
@@ -232,7 +256,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Last release of the upstream "RARBG Enhancer Fork 6.0.1 (WORKS)" before this
 repository began. See the userscript header for prior history.
 
-[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.6...HEAD
+[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.7...HEAD
+[6.2.7]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.6...v6.2.7
 [6.2.6]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.5...v6.2.6
 [6.2.5]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.4...v6.2.5
 [6.2.4]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.3...v6.2.4
