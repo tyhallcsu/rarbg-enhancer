@@ -2,9 +2,9 @@
 var meta = {
     rawmdb: function () {
 // ==UserScript==
-// @name         RARBG Enhancer + Highlighter (Merged) 6.2.7
+// @name         RARBG Enhancer + Highlighter (Merged) 6.2.8
 // @namespace    https://github.com/tyhallcsu/rarbg-enhancer
-// @version      6.2.7
+// @version      6.2.8
 // @description  Fork of RARBG Enhancer 6 merged with the v5 Dynamic Column Highlighting script. Auto-solve CAPTCHA, infinite scroll, magnet shortcuts, thumbnails, image search links, plus seeder-based row highlighting, hide-below-threshold, and a floating modal settings panel.
 // @author       tyhallcsu
 // @contributor  Faris Hijazi (original author)
