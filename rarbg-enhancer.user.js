@@ -2,9 +2,9 @@
 var meta = {
     rawmdb: function () {
 // ==UserScript==
-// @name         RARBG Enhancer + Highlighter (Merged) 6.2.4
+// @name         RARBG Enhancer + Highlighter (Merged) 6.2.5
 // @namespace    https://github.com/tyhallcsu/rarbg-enhancer
-// @version      6.2.4
+// @version      6.2.5
 // @description  Fork of RARBG Enhancer 6 merged with the v5 Dynamic Column Highlighting script. Auto-solve CAPTCHA, infinite scroll, magnet shortcuts, thumbnails, image search links, plus seeder-based row highlighting, hide-below-threshold, and a floating modal settings panel.
 // @author       tyhallcsu
 // @contributor  Faris Hijazi (original author)
@@ -2850,7 +2850,7 @@ a.extra-tb {
                 '<div class="overlay" data-action="close"></div>',
                 '<div class="panel" role="dialog" aria-modal="true" aria-labelledby="rbhl-title">',
                 '  <div class="header">',
-                '    <h2 id="rbhl-title">RARBG Enhancer<span class="badge">v6.2.4</span></h2>',
+                '    <h2 id="rbhl-title">RARBG Enhancer<span class="badge">v6.2.5</span></h2>',
                 '    <button class="close-btn" type="button" data-action="close" title="Close (Esc)" aria-label="Close settings">×</button>',
                 '  </div>',
                 '  <div class="body">',
@@ -2955,113 +2955,126 @@ a.extra-tb {
                 if (panel.classList.contains("open")) closePanel(); else openPanel();
             }
 
-            // ---- DELEGATED click + input handlers (DOCUMENT-level) -------
+            // ---- DELEGATED handlers (PAGE-WORLD via injected <script>) ---
             //
             // History of this binding:
             //   - v6.2.2 bound a click listener directly to fab.
-            //   - v6.2.4 moved to a single delegated click listener on `root`
+            //   - v6.2.3 moved to a single delegated click listener on `root`
             //     (the shadow root).
-            //   - v6.2.4 (this version) moves the listener to `document` and
-            //     uses event.composedPath() to detect clicks within our shadow
-            //     root.
+            //   - v6.2.5 moved to `document` with composedPath().
+            //   - v6.2.5 (this version) injects a <script> tag whose contents
+            //     run in PAGE WORLD, registering the listeners there.
             //
-            // Why document-level: with @grant unsafeWindow, the userscript
-            // runs in a Tampermonkey sandbox. Empirically, click events on
-            // shadow-root descendants do NOT trigger listeners that the
-            // sandbox attached to the shadow root, even for trusted clicks.
-            // (Verified end-to-end on rargb.to/tv/ in #42.) Listeners on
-            // `document`, however, DO fire — that's why the Mousetrap Ctrl+/
-            // binding worked. So we move all delegated handlers to document
-            // and walk the composedPath() looking for our data-action /
-            // data-key elements that live in the shadow tree.
-            //
-            // composedPath() returns the event's bubble path including
-            // elements inside any shadow roots it crossed. The first element
-            // is e.target retargeted to the deepest shadow boundary. We
-            // search the whole path for the closest ancestor with a
-            // data-action attribute — that's our action element.
+            // Why page-world: with @grant unsafeWindow, the userscript runs
+            // in a Tampermonkey sandbox. Empirically, click events that
+            // ORIGINATE inside our shadow root don't reach sandbox-registered
+            // listeners — even on document. Mousetrap's Ctrl+/ keydown works
+            // because that event originates in light DOM. The fix is to
+            // register the click handler from page-world context, where
+            // cross-shadow events arrive normally.
 
-            function findInPath(e, attrName) {
-                var path = e.composedPath ? e.composedPath() : [];
-                if (!path.length) return null;
-                // Bail early if our host isn't on the path — click is unrelated.
-                if (path.indexOf(host) === -1) return null;
-                for (var i = 0; i < path.length; i++) {
-                    var el = path[i];
-                    if (el === host) break; // stop walking up past our shadow boundary
-                    if (el && el.dataset && el.dataset[attrName]) return el;
-                }
-                return null;
-            }
-
-            document.addEventListener("click", function (e) {
-                var actor = findInPath(e, "action");
-                if (!actor) return;
-                var action = actor.dataset.action;
-                if (action === "toggle") {
-                    togglePanel();
-                } else if (action === "close") {
-                    closePanel();
-                } else if (action === "open-legacy") {
-                    closePanel();
-                    try { GM_config.open(); } catch (err) {}
-                } else if (action === "reset") {
-                    hl.settings.enabled = true;
-                    hl.settings.threshold = 100;
-                    hl.settings.color = "#c0edc8";
-                    hl.settings.hideBelow = false;
-                    hl.settings.autoScrollAssist = true;
-                    syncFromSettings();
-                    hl.apply();
-                    refreshCounter();
-                }
-            }, false);
-
-            function handleSettingChange(e) {
-                // For form-control events, e.composedPath()[0] is the actual
-                // <input>; we only need to confirm it's inside our host.
-                var path = e.composedPath ? e.composedPath() : [];
-                if (path.indexOf(host) === -1) return;
-                var t = path[0];
-                if (!t || !t.dataset) return;
-                var key = t.dataset.key;
-                var gmckey = t.dataset.gmckey;
-                if (key) {
-                    if (t.type === "checkbox") hl.settings[key] = t.checked;
-                    else if (t.type === "number") hl.settings[key] = t.value;
-                    else hl.settings[key] = t.value;
-                    hl.apply();
-                    refreshCounter();
-                } else if (gmckey) {
-                    gmcSet(gmckey, t.checked);
-                    var hint = root.querySelector(".hint");
-                    if (hint) hint.textContent = "Reload page for enhancer toggle to take effect.";
-                }
-            }
-            // input bubbles across shadow boundary (composed=true on form
-            // controls). change does too on modern browsers, but historically
-            // it's been composed=false; we listen for both to be safe.
-            document.addEventListener("input", handleSettingChange, false);
-            document.addEventListener("change", handleSettingChange, false);
-
-            // ---- keyboard ------------------------------------------------
-            // Esc closes when modal is open. (Ctrl+/ is bound at the
-            // Mousetrap level in the main IIFE — see __rbhlPanel below.)
-            document.addEventListener("keydown", function (e) {
-                if (e.key === "Escape" && panel.classList.contains("open")) {
-                    e.preventDefault();
-                    closePanel();
-                }
-            });
-
-            // ---- expose handle for Ctrl+/ + external callers -------------
+            // ---- panel API exposed via unsafeWindow ----------------------
+            // The page-world delegated listeners (injected below) call into
+            // these methods. Mousetrap Ctrl+/ also calls __rbhlPanel.toggle().
             unsafeWindow.__rbhlPanel = {
                 open: openPanel,
                 close: closePanel,
                 toggle: togglePanel,
                 refreshCounter: refreshCounter,
                 isOpen: function () { return panel.classList.contains("open"); },
+                // Called by page-world click handler with the data-action value.
+                dispatchAction: function (action) {
+                    if (action === "toggle") togglePanel();
+                    else if (action === "close") closePanel();
+                    else if (action === "open-legacy") {
+                        closePanel();
+                        try { GM_config.open(); } catch (err) {}
+                    } else if (action === "reset") {
+                        hl.settings.enabled = true;
+                        hl.settings.threshold = 100;
+                        hl.settings.color = "#c0edc8";
+                        hl.settings.hideBelow = false;
+                        hl.settings.autoScrollAssist = true;
+                        syncFromSettings();
+                        hl.apply();
+                        refreshCounter();
+                    }
+                },
+                // Called by page-world input/change handler. `key` is either
+                // a highlighter setting key (data-key, isGmc=false) or a
+                // GM_config key (data-gmckey, isGmc=true).
+                dispatchSetting: function (key, value, isGmc) {
+                    if (isGmc) {
+                        gmcSet(key, value);
+                        var hintEl = root.querySelector(".hint");
+                        if (hintEl) {
+                            hintEl.textContent =
+                                "Reload page for enhancer toggle to take effect.";
+                        }
+                    } else {
+                        hl.settings[key] = value;
+                        hl.apply();
+                        refreshCounter();
+                    }
+                },
             };
+
+            // ---- inject page-world delegation ---------------------------
+            (function injectPageWorldDelegation() {
+                var s = document.createElement("script");
+                s.setAttribute("data-rbhl-injected", "1");
+                s.textContent = "(" + (function () {
+                    var host = document.getElementById("rbhl-host");
+                    if (!host) return;
+                    function findInPath(e, attrName) {
+                        var path = e.composedPath ? e.composedPath() : [];
+                        if (!path.length || path.indexOf(host) === -1) return null;
+                        for (var i = 0; i < path.length; i++) {
+                            var el = path[i];
+                            if (el === host) break;
+                            if (el && el.dataset && el.dataset[attrName]) return el;
+                        }
+                        return null;
+                    }
+                    document.addEventListener("click", function (e) {
+                        var actor = findInPath(e, "action");
+                        if (!actor) return;
+                        if (window.__rbhlPanel && window.__rbhlPanel.dispatchAction) {
+                            window.__rbhlPanel.dispatchAction(actor.dataset.action);
+                        }
+                    }, false);
+                    function handleSettingChange(e) {
+                        var path = e.composedPath ? e.composedPath() : [];
+                        if (path.indexOf(host) === -1) return;
+                        var t = path[0];
+                        if (!t || !t.dataset || !window.__rbhlPanel) return;
+                        var key = t.dataset.key;
+                        var gmckey = t.dataset.gmckey;
+                        if (key) {
+                            var v = t.type === "checkbox" ? t.checked : t.value;
+                            window.__rbhlPanel.dispatchSetting(key, v, false);
+                        } else if (gmckey) {
+                            window.__rbhlPanel.dispatchSetting(gmckey, t.checked, true);
+                        }
+                    }
+                    document.addEventListener("input", handleSettingChange, false);
+                    document.addEventListener("change", handleSettingChange, false);
+                }).toString() + ")();";
+                (document.head || document.documentElement).appendChild(s);
+                // Script ran synchronously by appendChild's return; remove the
+                // tag to keep the DOM tidy.
+                s.remove();
+            })();
+
+            // ---- keyboard (sandbox keydown listeners DO fire) ------------
+            // Esc closes when modal is open. Ctrl+/ is handled by Mousetrap
+            // earlier in the main IIFE.
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape" && panel.classList.contains("open")) {
+                    e.preventDefault();
+                    closePanel();
+                }
+            });
         }
 
         if (document.body) {

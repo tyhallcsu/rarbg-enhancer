@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.5] — 2026-05-01
+
+### Fixed
+- **FAB click + every modal control still didn't fire in v6.2.4** (re-opens
+  and re-closes #42). The v6.2.4 hypothesis ("listener on shadow root vs
+  document") was wrong. The actual constraint is stricter: under
+  `@grant unsafeWindow`, sandbox-registered listeners don't receive click
+  events that ORIGINATE inside our shadow root, regardless of where the
+  listener is attached. Mousetrap's `Ctrl+/` worked all along because that
+  keydown originates in light DOM.
+
+  Fix: register the delegated click / input / change listeners from
+  page-world context by injecting a `<script>` element into the document.
+  The handlers call back into the sandbox via `unsafeWindow.__rbhlPanel`'s
+  new `dispatchAction(action)` and `dispatchSetting(key, value, isGmc)`
+  methods.
+
+  Verification path: install v6.2.5, click the green ⚙ FAB. Modal should
+  open. Click each toggle switch — should apply live. Click ×, scrim, or
+  Reset — all should respond.
+
+### Changed
+- `unsafeWindow.__rbhlPanel` API extended:
+  - `dispatchAction(action)` — handles `toggle` / `close` / `open-legacy` / `reset`
+  - `dispatchSetting(key, value, isGmc)` — applies a highlighter or GM_config setting
+
+  These are the entry points the page-world delegated handler calls into.
+  External callers may continue to use `open` / `close` / `toggle` /
+  `isOpen` / `refreshCounter` (unchanged).
+
+### Notes
+- Three-version learning curve concluded: shadow-DOM event delegation under
+  `@grant unsafeWindow` requires page-world handler registration. Documented
+  in `~/.claude/skills/playwright-tampermonkey/SKILL.md` as a known gotcha.
+
 ## [6.2.4] — 2026-05-01
 
 ### Fixed
@@ -169,7 +204,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Last release of the upstream "RARBG Enhancer Fork 6.0.1 (WORKS)" before this
 repository began. See the userscript header for prior history.
 
-[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.4...HEAD
+[Unreleased]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.5...HEAD
+[6.2.5]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.4...v6.2.5
 [6.2.4]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.3...v6.2.4
 [6.2.3]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.2...v6.2.3
 [6.2.2]: https://github.com/tyhallcsu/rarbg-enhancer/compare/v6.2.1...v6.2.2
