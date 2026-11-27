@@ -1,9 +1,0 @@
-node_modules/
-dist/
-build/
-# The userscript is a merged file that vendors a large block of legacy
-# upstream enhancer code (and an embedded Tesseract.js UMD bundle). It
-# has known pre-existing lint issues that are out of scope here. The
-# header validator (scripts/validate-header.js) covers JS syntax
-# correctness; ESLint runs over scripts/ for the parts we own.
-rarbg-enhancer.user.js
